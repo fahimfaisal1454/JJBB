@@ -42,7 +42,7 @@ const menuConfig = [
       { label: "Transaction Locking", path: "/accounting/transaction-locking" },
       { label: "Petty Cash", path: "/accounting/petty-cash" },
       { label: "Cash Reconciliation", path: "/accounting/cash-reconciliation" },
-
+      { label: "Bank Reconciliation", path: "/accounting/bank-reconciliation" },  // ← add this
     ],
   },
 {

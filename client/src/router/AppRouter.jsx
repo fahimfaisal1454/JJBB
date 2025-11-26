@@ -29,6 +29,7 @@ import Budget from "../pages/accounting/Budget";
 import TransactionLocking from "../pages/accounting/TransactionLocking";
 import PettyCash from "../pages/accounting/PettyCash";
 import CashReconciliation from "../pages/accounting/CashReconciliation";
+import BankReconciliation from "../pages/accounting/BankReconciliation";
 // Stock
 import Inventory from "../pages/stock/Inventory";
 import Products from "../pages/stock/Products/Products";
@@ -50,6 +51,7 @@ import BankCategory from "../pages/settings/bankcategory/page";
 import BankMaster from "../pages/settings/bank/page";
 import Division from "../pages/settings/division/page";
 import District from "../pages/settings/district/page";
+
 
 
 
@@ -85,6 +87,7 @@ export default function AppRouter() {
         <Route path="/accounting/transaction-locking" element={<TransactionLocking />} />
         <Route path="/accounting/petty-cash" element={<PettyCash />} />
         <Route path="/accounting/cash-reconciliation" element={<CashReconciliation />} />
+        <Route path="/accounting/bank-reconciliation" element={<BankReconciliation/>} />
         {/* Stock */}
         <Route path="/stock/inventory" element={<Inventory />} />
         <Route path="/stock/products" element={<Products />} />
@@ -106,7 +109,7 @@ export default function AppRouter() {
         <Route path="/master/bank" element={<BankMaster />} />
         <Route path="/master/divisions" element={<Division />} />
         <Route path="/master/districts" element={<District />} />
-
+      
       </Route>
     </Routes>
   );
