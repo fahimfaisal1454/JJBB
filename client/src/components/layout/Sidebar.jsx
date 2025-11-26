@@ -40,6 +40,9 @@ const menuConfig = [
       { label: "Chart of Accounts", path: "/accounting/chart-of-accounts" },
       { label: "Budget", path: "/accounting/budget" },
       { label: "Transaction Locking", path: "/accounting/transaction-locking" },
+      { label: "Petty Cash", path: "/accounting/petty-cash" },
+      { label: "Cash Reconciliation", path: "/accounting/cash-reconciliation" },
+
     ],
   },
 {

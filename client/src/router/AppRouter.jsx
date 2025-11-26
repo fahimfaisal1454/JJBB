@@ -27,7 +27,8 @@ import CurrencyAdjustments from "../pages/accounting/CurrencyAdjustments";
 import ChartOfAccounts from "../pages/accounting/ChartOfAccounts";
 import Budget from "../pages/accounting/Budget";
 import TransactionLocking from "../pages/accounting/TransactionLocking";
-
+import PettyCash from "../pages/accounting/PettyCash";
+import CashReconciliation from "../pages/accounting/CashReconciliation";
 // Stock
 import Inventory from "../pages/stock/Inventory";
 import Products from "../pages/stock/Products";
@@ -69,7 +70,8 @@ export default function AppRouter() {
         <Route path="/accounting/chart-of-accounts" element={<ChartOfAccounts />} />
         <Route path="/accounting/budget" element={<Budget />} />
         <Route path="/accounting/transaction-locking" element={<TransactionLocking />} />
-
+        <Route path="/accounting/petty-cash" element={<PettyCash />} />
+        <Route path="/accounting/cash-reconciliation" element={<CashReconciliation />} />
         {/* Stock */}
         <Route path="/stock/inventory" element={<Inventory />} />
         <Route path="/stock/products" element={<Products />} />
