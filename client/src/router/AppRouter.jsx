@@ -31,7 +31,7 @@ import PettyCash from "../pages/accounting/PettyCash";
 import CashReconciliation from "../pages/accounting/CashReconciliation";
 // Stock
 import Inventory from "../pages/stock/Inventory";
-import Products from "../pages/stock/Products";
+import Products from "../pages/stock/Products/Products";
 import DamagedProducts from "../pages/stock/DamagedProducts";
 
 // Assets
@@ -40,6 +40,19 @@ import DamagedAssets from "../pages/assets/DamagedAssets";
 
 // Reports
 import ReportsHome from "../pages/reports/ReportsHome";
+
+// Settings
+import CostCategory from "../pages/settings/CostCategory/page";
+import SourceCategory from "../pages/settings/sourcecategory/page";
+import ProductCategory from "../pages/settings/productcategory/page";
+import PaymentMode from "../pages/settings/paymentmode/page";
+import BankCategory from "../pages/settings/bankcategory/page";
+import BankMaster from "../pages/settings/bank/page";
+import Division from "../pages/settings/division/page";
+import District from "../pages/settings/district/page";
+
+
+
 
 export default function AppRouter() {
   return (
@@ -83,6 +96,17 @@ export default function AppRouter() {
 
         {/* Reports */}
         <Route path="/reports" element={<ReportsHome />} />
+
+        {/* Accounting */}
+        <Route path="/master/cost-category" element={<CostCategory />} />
+        <Route path="/master/income-sources" element={<SourceCategory />} />
+        <Route path="/master/product-category" element={<ProductCategory />} />
+        <Route path="/master/payment-mode" element={<PaymentMode />} />
+        <Route path="/master/bank-category" element={<BankCategory />} />
+        <Route path="/master/bank" element={<BankMaster />} />
+        <Route path="/master/divisions" element={<Division />} />
+        <Route path="/master/districts" element={<District />} />
+
       </Route>
     </Routes>
   );

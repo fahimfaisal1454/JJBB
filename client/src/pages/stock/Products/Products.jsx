@@ -1,8 +1,23 @@
+import { useEffect, useState } from "react";
+import AddProductModal from "./AddProductModal";
+import AxiosInstance from "../../../components/AxiosInstance";
+
 export default function Products() {
-  const rows = [
-    { name: "Router", sku: "PRD-010", stock: 25, reorder: 5, value: "৳ 137,500" },
-    { name: "Network Cable Roll", sku: "PRD-011", stock: 8, reorder: 10, value: "৳ 24,000" },
-  ];
+  const [products, setProducts] = useState([]);
+  const [openModal, setOpenModal] = useState(false);
+
+  const getProducts = async () => {
+    try {
+      const res = await AxiosInstance.get("/products/");
+      setProducts(res.data);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+    }
+  };
+
+  useEffect(() => {
+    getProducts();
+  }, []);
 
   const stockStatus = (stock, reorder) =>
     stock <= reorder ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700";
@@ -17,7 +32,11 @@ export default function Products() {
             Track quantities on hand, reorder levels, and stock value.
           </p>
         </div>
-        <button className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700">
+
+        <button
+          onClick={() => setOpenModal(true)}
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700"
+        >
           + New Product
         </button>
       </div>
@@ -36,6 +55,7 @@ export default function Products() {
             <option>In Stock</option>
           </select>
         </div>
+
         <button className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs">
           Export
         </button>
@@ -55,24 +75,27 @@ export default function Products() {
               <th className="py-2 px-2 text-right">Actions</th>
             </tr>
           </thead>
+
           <tbody>
-            {rows.map((p) => (
-              <tr key={p.sku} className="border-b last:border-0">
+            {products.map((p) => (
+              <tr key={p.id} className="border-b last:border-0">
                 <td className="py-2 px-2 font-medium">{p.name}</td>
                 <td className="py-2 px-2 text-xs">{p.sku}</td>
                 <td className="py-2 px-2 text-right">{p.stock}</td>
-                <td className="py-2 px-2 text-right">{p.reorder}</td>
-                <td className="py-2 px-2 text-right">{p.value}</td>
+                <td className="py-2 px-2 text-right">{p.reorder_level}</td>
+                <td className="py-2 px-2 text-right">৳ {p.stock_value}</td>
+
                 <td className="py-2 px-2">
                   <span
                     className={`px-2 py-1 text-xs rounded-full ${stockStatus(
                       p.stock,
-                      p.reorder
+                      p.reorder_level
                     )}`}
                   >
-                    {p.stock <= p.reorder ? "Low Stock" : "OK"}
+                    {p.stock <= p.reorder_level ? "Low Stock" : "OK"}
                   </span>
                 </td>
+
                 <td className="py-2 px-2 text-right text-xs space-x-2">
                   <button className="px-2 py-1 rounded border border-slate-200 hover:border-blue-500">
                     Adjust
@@ -86,6 +109,14 @@ export default function Products() {
           </tbody>
         </table>
       </div>
+
+      {/* Modal */}
+      {openModal && (
+        <AddProductModal
+          closeModal={() => setOpenModal(false)}
+          refreshProducts={getProducts}
+        />
+      )}
     </div>
   );
 }
