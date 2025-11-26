@@ -1,11 +1,13 @@
 from rest_framework import viewsets
 from .models import*
 from .serializers import*
+from rest_framework.permissions import IsAuthenticated , AllowAny
 
 
 
 
 class CostCategoryViewSet(viewsets.ModelViewSet):
+    permission_classes = [AllowAny]
     queryset = CostCategory.objects.all()
     serializer_class = CostCategorySerializer
 

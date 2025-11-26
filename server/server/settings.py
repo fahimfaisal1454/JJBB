@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     # Installed apps
     'product',
     'master',
+    'purchase',
 ]
 
 

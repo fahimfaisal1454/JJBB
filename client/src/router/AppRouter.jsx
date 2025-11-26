@@ -30,10 +30,14 @@ import TransactionLocking from "../pages/accounting/TransactionLocking";
 import PettyCash from "../pages/accounting/PettyCash";
 import CashReconciliation from "../pages/accounting/CashReconciliation";
 import BankReconciliation from "../pages/accounting/BankReconciliation";
+
 // Stock
 import Inventory from "../pages/stock/Inventory";
 import Products from "../pages/stock/Products/Products";
 import DamagedProducts from "../pages/stock/DamagedProducts";
+
+//Expenses
+import ExpensePage from "../pages/expenses/Expense";
 
 // Assets
 import CurrentAssets from "../pages/assets/CurrentAssets";
@@ -92,6 +96,8 @@ export default function AppRouter() {
         <Route path="/stock/inventory" element={<Inventory />} />
         <Route path="/stock/products" element={<Products />} />
         <Route path="/stock/damaged-products" element={<DamagedProducts />} />
+        {/* Expenses */}
+        <Route path="/expenses" element={<ExpensePage />} />
 
         {/* Assets */}
         <Route path="/assets/current-assets" element={<CurrentAssets />} />
