@@ -1,143 +1,90 @@
 import { useEffect, useRef, useState } from "react";
 import AxiosInstance from "../../../components/AxiosInstance";
 
+
 export default function AddProductModal({ closeModal, refreshProducts }) {
   const modalRef = useRef();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [selectedBusinessCategory, setSelectedBusinessCategory] = useState(null);
 
   const [formData, setFormData] = useState({
-    name: "",
-    sku: "",
-    stock: "",
-    reorder_level: "",
-    stock_value: "",
+    product_name: "",
+    product_code: "",
+    business_category: "",
+    price: "",
+    unit: "",
+    remarks: "",
   });
 
-  // Reusable handle change
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ 
-      ...prev, 
-      [name]: value 
-    }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  // Close modal by outside click
-  const handleOutsideClick = (e) => {
-    if (modalRef.current === e.target) {
-      closeModal();
-    }
-  };
-
-  // Close on ESC
   useEffect(() => {
-    const handleKey = (e) => {
-      if (e.key === "Escape") closeModal();
-    };
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
+    const storedCategory = localStorage.getItem("selectedBusinessCategory");
+    if (storedCategory) {
+      const data = JSON.parse(storedCategory);
+      setSelectedBusinessCategory(data);
+      setFormData(prev => ({ ...prev, business_category: data.id }));
+    }
   }, []);
 
-  // Validate form
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
+  };
+
+  const handleOutsideClick = (e) => {
+    if (modalRef.current === e.target) closeModal();
+  };
+
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === "Escape") closeModal(); };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, []);
+
   const validateForm = () => {
     const newErrors = {};
-    
-    if (!formData.name.trim()) {
-      newErrors.name = "Product name is required";
-    }
-    
-    if (!formData.sku.trim()) {
-      newErrors.sku = "SKU code is required";
-    }
-    
-    if (formData.stock === "" || formData.stock < 0) {
-      newErrors.stock = "Valid stock quantity is required";
-    }
-    
-    if (formData.reorder_level === "" || formData.reorder_level < 0) {
-      newErrors.reorder_level = "Valid reorder level is required";
-    }
-    
-    if (formData.stock_value === "" || formData.stock_value < 0) {
-      newErrors.stock_value = "Valid stock value is required";
-    }
-    
+    if (!formData.product_name.trim()) newErrors.product_name = "Product name is required";
+    if (!formData.price || parseFloat(formData.price) < 0) newErrors.price = "Valid price is required";
+    if (!formData.unit.trim()) newErrors.unit = "Unit is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const addProduct = async () => {
     if (!validateForm()) return;
-    
     setIsLoading(true);
     try {
-      await AxiosInstance.post("/products/", formData);
+      console.log("enter")
+      await AxiosInstance.post("/products/", {
+        ...formData,
+        price: parseFloat(formData.price)
+      });
       refreshProducts();
       closeModal();
-      
-      // Show success message (you can replace with toast notification)
-      console.log("Product added successfully!");
     } catch (err) {
-      console.error("Add Product Error:", err);
-      setErrors({ submit: "Failed to add product. Please try again." });
+      if (err.response?.data) {
+        const fieldErrors = {};
+        Object.keys(err.response.data).forEach(k => {
+          fieldErrors[k] = Array.isArray(err.response.data[k]) ? err.response.data[k][0] : err.response.data[k];
+        });
+        setErrors(fieldErrors);
+      } else {
+        setErrors({ submit: "Failed to add product" });
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle Enter key press to submit
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter" && !isLoading) {
-      addProduct();
-    }
-  };
-
-  const InputField = ({ label, name, type = "text", placeholder, icon }) => (
-    <div className="space-y-2">
-      <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-        {icon}
-        {label}
-        <span className="text-red-500">*</span>
-      </label>
-      <input
-        type={type}
-        name={name}
-        value={formData[name]}
-        placeholder={placeholder || `Enter ${label.toLowerCase()}`}
-        onChange={handleChange}
-        onKeyPress={handleKeyPress}
-        className={`w-full border rounded-xl px-4 py-3 text-sm bg-white
-                   focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all duration-200
-                   ${errors[name] 
-                     ? "border-red-300 focus:ring-red-400 bg-red-50" 
-                     : "border-slate-300 focus:ring-blue-500 focus:border-blue-400 hover:border-slate-400"
-                   }`}
-      />
-      {errors[name] && (
-        <p className="text-red-500 text-xs flex items-center gap-1">
-          ⚠️ {errors[name]}
-        </p>
-      )}
-    </div>
-  );
-
   return (
     <div
       ref={modalRef}
       onClick={handleOutsideClick}
-      className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[999] 
-                 animate-fadeIn p-4"
+      className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[999] p-4"
     >
-      <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md transform 
-                   animate-slideUp border border-slate-200/60 overflow-hidden"
-      >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md transform animate-slideUp border border-slate-200/60 overflow-hidden">
+        
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6">
           <div className="flex items-center justify-between">
@@ -148,12 +95,8 @@ export default function AddProductModal({ closeModal, refreshProducts }) {
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">
-                  Add New Product
-                </h2>
-                <p className="text-blue-100 text-sm mt-1">
-                  Fill in the product details below
-                </p>
+                <h2 className="text-xl font-bold text-white">Add New Product</h2>
+                <p className="text-blue-100 text-sm mt-1">Fill in the product details below</p>
               </div>
             </div>
             <button
@@ -180,90 +123,129 @@ export default function AddProductModal({ closeModal, refreshProducts }) {
             </div>
           )}
 
+         
           <div className="space-y-4">
-            <InputField 
-              label="Product Name" 
-              name="name" 
-              icon="📦"
-              placeholder="e.g., Apple iPhone 14 Pro"
-            />
-            
-            <InputField 
-              label="SKU Code" 
-              name="sku" 
-              icon="🏷️"
-              placeholder="e.g., IPH14-PRO-128"
-            />
-            
-            <div className="grid grid-cols-2 gap-4">
-              <InputField 
-                label="In Stock" 
-                name="stock" 
-                type="number" 
-                icon="📊"
-                placeholder="0"
+            {/* Product Name */}
+            <div>
+              <label className="text-sm font-medium flex items-center gap-2">
+                📦 Product Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="product_name"
+                value={formData.product_name}
+                onChange={handleChange}
+                placeholder="Enter Product Name"
+                className={`w-full border rounded-xl px-4 py-3 text-sm
+                  focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all duration-200
+                  ${errors.product_name ? 'border-red-300 focus:ring-red-400 bg-red-50' : 'border-slate-300 focus:ring-blue-500 focus:border-blue-400 hover:border-slate-400'}
+                `}
               />
-              
-              <InputField 
-                label="Reorder Level" 
-                name="reorder_level" 
-                type="number" 
-                icon="⚠️"
-                placeholder="10"
+              {errors.product_name && <p className="text-red-500 text-xs mt-1">⚠️ {errors.product_name}</p>}
+            </div>
+
+            {/* Product Code */}
+            <div>
+              <label className="text-sm font-medium flex items-center gap-2">
+                🏷️ Product Code
+              </label>
+              <input
+                type="text"
+                name="product_code"
+                value={formData.product_code}
+                onChange={handleChange}
+                placeholder="Enter Product Code"
+                className="w-full border rounded-xl px-4 py-3 text-sm border-slate-300 focus:ring-blue-500 focus:border-blue-400 hover:border-slate-400"
               />
             </div>
-            
-            <InputField 
-              label="Stock Value" 
-              name="stock_value" 
-              type="number" 
-              icon="💰"
-              placeholder="0.00"
-            />
+
+            {/* Price and Unit */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  💰 Price <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleChange}
+                  placeholder="0.000"
+                  step="0.001"
+                  className={`w-full border rounded-xl px-4 py-3 text-sm
+                    ${errors.price ? 'border-red-300 focus:ring-red-400 bg-red-50' : 'border-slate-300 focus:ring-blue-500 focus:border-blue-400 hover:border-slate-400'}
+                  `}
+                />
+                {errors.price && <p className="text-red-500 text-xs mt-1">⚠️ {errors.price}</p>}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  📏 Unit <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="unit"
+                  value={formData.unit}
+                  onChange={handleChange}
+                  placeholder="pcs, kg, etc."
+                  className={`w-full border rounded-xl px-4 py-3 text-sm
+                    ${errors.unit ? 'border-red-300 focus:ring-red-400 bg-red-50' : 'border-slate-300 focus:ring-blue-500 focus:border-blue-400 hover:border-slate-400'}
+                  `}
+                />
+                {errors.unit && <p className="text-red-500 text-xs mt-1">⚠️ {errors.unit}</p>}
+              </div>
+            </div>
+
+            {/* Remarks */}
+            <div>
+              <label className="text-sm font-medium flex items-center gap-2">
+                📝 Remarks
+              </label>
+              <textarea
+                name="remarks"
+                value={formData.remarks}
+                onChange={handleChange}
+                rows={3}
+                placeholder="Additional notes (optional)"
+                className="w-full border rounded-xl px-4 py-3 text-sm resize-none border-slate-300 focus:ring-blue-500 focus:border-blue-400 hover:border-slate-400"
+              />
+            </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="border-t border-slate-200 bg-slate-50/80 p-6">
-          <div className="flex justify-between items-center">
-            <button
-              onClick={closeModal}
-              disabled={isLoading}
-              className="px-6 py-3 rounded-xl text-sm font-medium border border-slate-300 bg-white text-slate-700 
-                         hover:bg-slate-50 hover:border-slate-400 active:scale-95 disabled:opacity-50
-                         transition-all duration-200 flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Cancel
-            </button>
+        <div className="border-t border-slate-200 bg-slate-50/80 p-6 flex justify-between items-center">
+          <button
+            onClick={closeModal}
+            disabled={isLoading}
+            className="px-6 py-3 rounded-xl text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 active:scale-95 disabled:opacity-50"
+          >
+            Cancel
+          </button>
 
-            <button
-              onClick={addProduct}
-              disabled={isLoading}
-              className="px-8 py-3 rounded-xl text-sm font-medium bg-gradient-to-r from-blue-600 to-blue-700 text-white 
-                         hover:from-blue-700 hover:to-blue-800 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed
-                         shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                  </svg>
-                  Adding...
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Save Product
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            onClick={addProduct}
+            disabled={isLoading || !selectedBusinessCategory}
+            className="px-8 py-3 rounded-xl text-sm font-medium bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+          >
+            {isLoading ? (
+              <>
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                Adding...
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Save Product
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>
