@@ -58,6 +58,7 @@ const menuConfig = [
   icon: "🧾",
   items: [
     { label: "Expenses", path: "/expenses" },
+    { label: "Salary Expense", path: "/expenses/salary" },  // ← add this
   ],
 },
 {
