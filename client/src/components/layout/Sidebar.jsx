@@ -61,14 +61,13 @@ const menuConfig = [
     { label: "Expenses", path: "/expenses" },
   ],
 },
-  {
-    title: "Assets",
-    icon: "🏢",
-    items: [
-      { label: "Current Assets", path: "/assets/current-assets" },
-      { label: "Damaged Assets", path: "/assets/damaged-assets" },
-    ],
-  },
+{
+  title: "Assets",
+  icon: "🏢",
+  items: [
+    { label: "Assets", path: "/assets" },   
+  ],
+},
   {
     title: "Reports",
     icon: "📑",

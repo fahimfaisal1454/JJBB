@@ -46,8 +46,9 @@ import DamagedProducts from "../pages/stock/DamagedProducts";
 import ExpensePage from "../pages/expenses/Expense";
 
 // Assets
-import CurrentAssets from "../pages/assets/CurrentAssets";
-import DamagedAssets from "../pages/assets/DamagedAssets";
+import AssetsPage from "../pages/assets/Assets";
+// import CurrentAssets from "../pages/assets/CurrentAssets";
+// import DamagedAssets from "../pages/assets/DamagedAssets";
 
 // Reports
 import ReportsHome from "../pages/reports/ReportsHome";
@@ -115,8 +116,9 @@ export default function AppRouter() {
         <Route path="/expenses" element={<ExpensePage />} />
 
         {/* Assets */}
-        <Route path="/assets/current-assets" element={<CurrentAssets />} />
-        <Route path="/assets/damaged-assets" element={<DamagedAssets />} />
+       <Route path="/assets" element={<AssetsPage />} />
+        {/* <Route path="/assets/current-assets" element={<CurrentAssets />} />
+        <Route path="/assets/damaged-assets" element={<DamagedAssets />} /> */}
 
         {/* Reports */}
         <Route path="/reports" element={<ReportsHome />} />
