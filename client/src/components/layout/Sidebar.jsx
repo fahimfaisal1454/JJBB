@@ -49,9 +49,8 @@ const menuConfig = [
   title: "Stock",
   icon: "📦",
   items: [
-    { label: "Inventory", path: "/stock/inventory" },  // ← add this
-    { label: "Products", path: "/stock/products" },
-    { label: "Damaged Products", path: "/stock/damaged-products" },
+    { label: "Inventory", path: "/dashboard/stocks" },  // ← add this
+    { label: "Products", path: "/dashboard/products" },
   ],
 },
 {
@@ -61,14 +60,13 @@ const menuConfig = [
     { label: "Expenses", path: "/expenses" },
   ],
 },
-  {
-    title: "Assets",
-    icon: "🏢",
-    items: [
-      { label: "Current Assets", path: "/assets/current-assets" },
-      { label: "Damaged Assets", path: "/assets/damaged-assets" },
-    ],
-  },
+{
+  title: "Assets",
+  icon: "🏢",
+  items: [
+    { label: "Assets", path: "/assets" },   
+  ],
+},
   {
     title: "Reports",
     icon: "📑",
@@ -87,6 +85,7 @@ const menuConfig = [
     { label: "Bank", path: "/master/bank" },
     { label: "Divisions", path: "/master/divisions" },
     { label: "Districts", path: "/master/districts" },
+    { label: "Supplier Type", path: "/master/supplier-type" },  // ← add this
   ],
 },
 

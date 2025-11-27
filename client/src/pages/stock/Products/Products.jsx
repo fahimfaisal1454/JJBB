@@ -5,6 +5,7 @@ import AxiosInstance from "../../../components/AxiosInstance";
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [openModal, setOpenModal] = useState(false);
+  const [editProduct, setEditProduct] = useState(null); // For edit modal
 
   const getProducts = async () => {
     try {
@@ -19,89 +20,71 @@ export default function Products() {
     getProducts();
   }, []);
 
-  const stockStatus = (stock, reorder) =>
-    stock <= reorder ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700";
+  const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this product?")) return;
+    try {
+      await AxiosInstance.delete(`/products/${id}/`);
+      setProducts(products.filter((p) => p.id !== id));
+    } catch (err) {
+      console.error("Error deleting product:", err);
+    }
+  };
+
+  const handleEdit = (product) => {
+    setEditProduct(product);
+    setOpenModal(true);
+  };
 
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">Stock Products</h1>
-          <p className="text-sm text-slate-500">
-            Track quantities on hand, reorder levels, and stock value.
-          </p>
-        </div>
-
+        <h1 className="text-xl font-semibold">Product List</h1>
         <button
-          onClick={() => setOpenModal(true)}
+          onClick={() => {
+            setEditProduct(null); // New product
+            setOpenModal(true);
+          }}
           className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700"
         >
           + New Product
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Search by name / SKU"
-            className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 w-64 focus:outline-none focus:ring focus:ring-blue-500/30"
-          />
-          <select className="text-sm border border-slate-200 rounded-lg px-3 py-1.5">
-            <option>Filter: All</option>
-            <option>Low Stock</option>
-            <option>In Stock</option>
-          </select>
-        </div>
-
-        <button className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs">
-          Export
-        </button>
-      </div>
-
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-        <table className="w-full text-sm">
-          <thead className="border-b bg-slate-50">
-            <tr className="text-left text-slate-500">
-              <th className="py-2 px-2">Name</th>
-              <th className="py-2 px-2">SKU</th>
-              <th className="py-2 px-2 text-right">In Stock</th>
-              <th className="py-2 px-2 text-right">Reorder Level</th>
-              <th className="py-2 px-2 text-right">Stock Value</th>
-              <th className="py-2 px-2">Status</th>
-              <th className="py-2 px-2 text-right">Actions</th>
+      <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-4 overflow-x-auto">
+        <table className="w-full text-sm min-w-[600px]">
+          <thead className="bg-slate-50 border-b border-slate-200">
+            <tr className="text-left text-slate-500 uppercase text-xs tracking-wider">
+              <th className="py-3 px-3">Name</th>
+              <th className="py-3 px-3">SKU</th>
+              <th className="py-3 px-3 text-right">Price</th>
+              <th className="py-3 px-3 text-right">Unit</th>
+              <th className="py-3 px-3">Remarks</th>
+              <th className="py-3 px-3 text-right">Actions</th>
             </tr>
           </thead>
 
           <tbody>
             {products.map((p) => (
-              <tr key={p.id} className="border-b last:border-0">
-                <td className="py-2 px-2 font-medium">{p.name}</td>
-                <td className="py-2 px-2 text-xs">{p.sku}</td>
-                <td className="py-2 px-2 text-right">{p.stock}</td>
-                <td className="py-2 px-2 text-right">{p.reorder_level}</td>
-                <td className="py-2 px-2 text-right">৳ {p.stock_value}</td>
-
-                <td className="py-2 px-2">
-                  <span
-                    className={`px-2 py-1 text-xs rounded-full ${stockStatus(
-                      p.stock,
-                      p.reorder_level
-                    )}`}
+              <tr key={p.id} className="border-b last:border-0 hover:bg-slate-50 transition-colors">
+                <td className="py-2 px-3 font-medium">{p.product_name}</td>
+                <td className="py-2 px-3 text-xs text-slate-600">{p.product_code}</td>
+                <td className="py-2 px-3 text-right font-semibold">{p.price}</td>
+                <td className="py-2 px-3 text-right">{p.unit}</td>
+                <td className="py-2 px-3">{p.remarks || "-"}</td>
+                <td className="py-2 px-3 text-right flex justify-end gap-2">
+                  <button
+                    onClick={() => handleEdit(p)}
+                    className="px-3 py-1 rounded-lg border border-slate-200 hover:border-blue-500 text-blue-600 hover:bg-blue-50 transition"
                   >
-                    {p.stock <= p.reorder_level ? "Low Stock" : "OK"}
-                  </span>
-                </td>
-
-                <td className="py-2 px-2 text-right text-xs space-x-2">
-                  <button className="px-2 py-1 rounded border border-slate-200 hover:border-blue-500">
-                    Adjust
+                    Edit
                   </button>
-                  <button className="px-2 py-1 rounded border border-slate-200 hover:border-blue-500">
-                    History
+                  <button
+                    onClick={() => handleDelete(p.id)}
+                    className="px-3 py-1 rounded-lg border border-slate-200 hover:border-red-500 text-red-600 hover:bg-red-50 transition"
+                  >
+                    Delete
                   </button>
                 </td>
               </tr>
@@ -115,6 +98,7 @@ export default function Products() {
         <AddProductModal
           closeModal={() => setOpenModal(false)}
           refreshProducts={getProducts}
+          editProduct={editProduct} // Pass the product to edit
         />
       )}
     </div>

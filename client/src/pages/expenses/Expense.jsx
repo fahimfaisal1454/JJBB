@@ -4,18 +4,26 @@ import AxiosInstance from "../../components/AxiosInstance";
 export default function ExpensePage() {
   const [categories, setCategories] = useState([]);
   const [expenses, setExpenses] = useState([]);
-  const [form, setForm] = useState({ cost_category: "", amount: "", note: "" });
+  const [form, setForm] = useState({
+    cost_category: "",
+    amount: "",
+    note: "",
+    expense_date: "",
+    recorded_by: "",
+  });
   const [saving, setSaving] = useState(false);
 
+  // Fetch cost categories
   const loadCategories = async () => {
     try {
-      const res = await AxiosInstance.get("cost-categories/"); // reuse existing endpoint
+      const res = await AxiosInstance.get("cost-categories/");
       setCategories(res.data);
     } catch (e) {
       console.error("Failed to load cost categories", e);
     }
   };
 
+  // Fetch existing expenses
   const loadExpenses = async () => {
     try {
       const res = await AxiosInstance.get("expenses/");
@@ -30,29 +38,34 @@ export default function ExpensePage() {
     loadExpenses();
   }, []);
 
-  const onChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  // Generic onChange
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
 
+  // Submit handler
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (!form.cost_category || !form.amount) return alert("Select category and enter amount");
+    if (!form.cost_category || !form.amount || !form.expense_date || !form.recorded_by) {
+      return alert("Please fill all required fields");
+    }
+
     setSaving(true);
     try {
-      await AxiosInstance.post("expenses/", {
-        cost_category: form.cost_category,
-        amount: form.amount,
-        note: form.note,
-      });
-      setForm({ cost_category: "", amount: "", note: "" });
+      await AxiosInstance.post("expenses/", form);
+      alert("Expense saved!");
+      setForm({ cost_category: "", amount: "", note: "", expense_date: "", recorded_by: "" });
       await loadExpenses();
-      alert("Saved!");
-    } catch (e) {
-      console.error("Save failed", e);
+    } catch (error) {
+      console.error("Save failed:", error);
       alert("Save failed");
     } finally {
       setSaving(false);
     }
   };
 
+  // Delete handler
   const onDelete = async (id) => {
     if (!confirm("Delete this expense?")) return;
     try {
@@ -65,10 +78,13 @@ export default function ExpensePage() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">Expenses</h2>
+      <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">
+        Expenses
+      </h2>
 
       {/* Form */}
-      <form onSubmit={onSubmit} className="flex items-end gap-4 flex-wrap">
+      <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-4">
+        {/* Cost Category */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1">
             Cost Category <span className="text-red-600">*</span>
@@ -82,11 +98,14 @@ export default function ExpensePage() {
           >
             <option value="">-- Select --</option>
             {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.category_name}</option>
+              <option key={c.id} value={c.id}>
+                {c.category_name}
+              </option>
             ))}
           </select>
         </div>
 
+        {/* Amount */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1">
             Amount (৳) <span className="text-red-600">*</span>
@@ -96,15 +115,33 @@ export default function ExpensePage() {
             name="amount"
             value={form.amount}
             onChange={onChange}
-            min="0"
             step="0.01"
+            placeholder="Enter amount"
             required
             className="border border-gray-300 rounded px-3 py-1 w-64 focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
 
+        {/* Date */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Note</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
+            Date <span className="text-red-600">*</span>
+          </label>
+          <input
+            type="date"
+            name="expense_date"
+            value={form.expense_date}
+            onChange={onChange}
+            required
+            className="border border-gray-300 rounded px-3 py-1 w-52 focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+        </div>
+
+        {/* Note */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
+            Note
+          </label>
           <input
             type="text"
             name="note"
@@ -115,14 +152,38 @@ export default function ExpensePage() {
           />
         </div>
 
+        {/* Recorded By */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
+            Recorded By <span className="text-red-600">*</span>
+          </label>
+          <input
+            type="text"
+            name="recorded_by"
+            value={form.recorded_by}
+            onChange={onChange}
+            placeholder="e.g., Accountant / Cashier"
+            required
+            className="border border-gray-300 rounded px-3 py-1 w-64 focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+        </div>
+
+        {/* Buttons */}
         <div className="flex gap-3 mb-1">
-          <button type="submit" disabled={saving}
-            className="bg-blue-950 hover:bg-blue-700 text-white px-3 py-[6px] rounded-md disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={saving}
+            className="bg-blue-950 hover:bg-blue-700 text-white px-3 py-[6px] rounded-md disabled:opacity-60"
+          >
             {saving ? "Saving..." : "Save"}
           </button>
-          <button type="reset"
+          <button
+            type="reset"
             className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
-            onClick={() => setForm({ cost_category: "", amount: "", note: "" })}>
+            onClick={() =>
+              setForm({ cost_category: "", amount: "", note: "", expense_date: "", recorded_by: "" })
+            }
+          >
             Reset
           </button>
         </div>
@@ -138,6 +199,7 @@ export default function ExpensePage() {
               <th className="py-2 px-2">Category</th>
               <th className="py-2 px-2 text-right">Amount</th>
               <th className="py-2 px-2">Note</th>
+              <th className="py-2 px-2">Recorded By</th>
               <th className="py-2 px-2 text-right">Actions</th>
             </tr>
           </thead>
@@ -147,18 +209,27 @@ export default function ExpensePage() {
                 <td className="py-2 px-2">{idx + 1}</td>
                 <td className="py-2 px-2">{e.expense_date}</td>
                 <td className="py-2 px-2">{e.cost_category_name}</td>
-                <td className="py-2 px-2 text-right">৳ {Number(e.amount).toFixed(2)}</td>
-                <td className="py-2 px-2">{e.note || "-"}</td>
                 <td className="py-2 px-2 text-right">
-                  <button onClick={() => onDelete(e.id)}
-                    className="px-2 py-1 rounded border border-slate-200 hover:border-red-500 text-xs">
+                  ৳ {Number(e.amount).toFixed(2)}
+                </td>
+                <td className="py-2 px-2">{e.note || "-"}</td>
+                <td className="py-2 px-2">{e.recorded_by || "-"}</td>
+                <td className="py-2 px-2 text-right">
+                  <button
+                    onClick={() => onDelete(e.id)}
+                    className="px-2 py-1 rounded border border-slate-200 hover:border-red-500 text-xs"
+                  >
                     Delete
                   </button>
                 </td>
               </tr>
             ))}
             {expenses.length === 0 && (
-              <tr><td className="py-4 px-2 text-center text-slate-400" colSpan={6}>No expenses yet</td></tr>
+              <tr>
+                <td colSpan={7} className="py-4 px-2 text-center text-slate-400">
+                  No expenses yet
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

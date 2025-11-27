@@ -24,7 +24,7 @@ import ProductsServicesSales from "../pages/sales/ProductsServicesSales";
 // Purchases
 import Bills from "../pages/purchases/Bills";
 import Vendors from "../pages/purchases/Vendors";
-import ProductsServicesPurchases from "../pages/purchases/ProductsServicesPurchases";
+import ProductsServicesPurchases from "../pages/purchases/ProductsPurchases";
 
 // Accounting
 import ManualJournals from "../pages/accounting/ManualJournals";
@@ -38,16 +38,16 @@ import CashReconciliation from "../pages/accounting/CashReconciliation";
 import BankReconciliation from "../pages/accounting/BankReconciliation";
 
 // Stock
-import Inventory from "../pages/stock/Inventory";
+import Stocks from "../pages/stock/Stocks/Stocks";
 import Products from "../pages/stock/Products/Products";
-import DamagedProducts from "../pages/stock/DamagedProducts";
 
 //Expenses
 import ExpensePage from "../pages/expenses/Expense";
 
 // Assets
-import CurrentAssets from "../pages/assets/CurrentAssets";
-import DamagedAssets from "../pages/assets/DamagedAssets";
+import AssetsPage from "../pages/assets/Assets";
+// import CurrentAssets from "../pages/assets/CurrentAssets";
+// import DamagedAssets from "../pages/assets/DamagedAssets";
 
 // Reports
 import ReportsHome from "../pages/reports/ReportsHome";
@@ -61,6 +61,7 @@ import BankCategory from "../pages/settings/bankcategory/page";
 import BankMaster from "../pages/settings/bank/page";
 import Division from "../pages/settings/division/page";
 import District from "../pages/settings/district/page";
+import SupplierType from "../pages/settings/suppliertype/page";
 
 
 // Profile
@@ -123,16 +124,18 @@ export default function AppRouter() {
         <Route path="/accounting/petty-cash" element={<PettyCash />} />
         <Route path="/accounting/cash-reconciliation" element={<CashReconciliation />} />
         <Route path="/accounting/bank-reconciliation" element={<BankReconciliation/>} />
+
         {/* Stock */}
-        <Route path="/stock/inventory" element={<Inventory />} />
-        <Route path="/stock/products" element={<Products />} />
-        <Route path="/stock/damaged-products" element={<DamagedProducts />} />
+        <Route path="/dashboard/stocks" element={<Stocks />} />
+        <Route path="/dashboard/products" element={<Products />} />
+
         {/* Expenses */}
         <Route path="/expenses" element={<ExpensePage />} />
 
         {/* Assets */}
-        <Route path="/assets/current-assets" element={<CurrentAssets />} />
-        <Route path="/assets/damaged-assets" element={<DamagedAssets />} />
+       <Route path="/assets" element={<AssetsPage />} />
+        {/* <Route path="/assets/current-assets" element={<CurrentAssets />} />
+        <Route path="/assets/damaged-assets" element={<DamagedAssets />} /> */}
 
         {/* Reports */}
         <Route path="/reports" element={<ReportsHome />} />
@@ -146,6 +149,7 @@ export default function AppRouter() {
         <Route path="/master/bank" element={<BankMaster />} />
         <Route path="/master/divisions" element={<Division />} />
         <Route path="/master/districts" element={<District />} />
+        <Route path="/master/supplier-type" element={<SupplierType />} />
       </Route>
     </Routes>
   );

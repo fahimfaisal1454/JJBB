@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import AxiosInstance from "../../../components/AxiosInstance";
 
-
-export default function AddProductModal({ closeModal, refreshProducts }) {
+export default function AddProductModal({ editProduct, closeModal, refreshProducts }) {
   const modalRef = useRef();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -11,11 +10,25 @@ export default function AddProductModal({ closeModal, refreshProducts }) {
   const [formData, setFormData] = useState({
     product_name: "",
     product_code: "",
-    business_category: "",
+    business_category: 1,
     price: "",
     unit: "",
     remarks: "",
   });
+
+  // Populate form if editing
+  useEffect(() => {
+    if (editProduct) {
+      setFormData({
+        product_name: editProduct.product_name || "",
+        product_code: editProduct.product_code || "",
+        business_category: editProduct.business_category || 1,
+        price: editProduct.price || "",
+        unit: editProduct.unit || "",
+        remarks: editProduct.remarks || "",
+      });
+    }
+  }, [editProduct]);
 
   useEffect(() => {
     const storedCategory = localStorage.getItem("selectedBusinessCategory");
@@ -51,15 +64,25 @@ export default function AddProductModal({ closeModal, refreshProducts }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const addProduct = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (!validateForm()) return;
+
     setIsLoading(true);
     try {
-      console.log("enter")
-      await AxiosInstance.post("/products/", {
-        ...formData,
-        price: parseFloat(formData.price)
-      });
+      if (editProduct) {
+        // Update existing product
+        await AxiosInstance.put(`/products/${editProduct.id}/`, {
+          ...formData,
+          price: parseFloat(formData.price)
+        });
+      } else {
+        // Add new product
+        await AxiosInstance.post("/products/", {
+          ...formData,
+          price: parseFloat(formData.price)
+        });
+      }
       refreshProducts();
       closeModal();
     } catch (err) {
@@ -70,7 +93,7 @@ export default function AddProductModal({ closeModal, refreshProducts }) {
         });
         setErrors(fieldErrors);
       } else {
-        setErrors({ submit: "Failed to add product" });
+        setErrors({ submit: editProduct ? "Failed to update product" : "Failed to add product" });
       }
     } finally {
       setIsLoading(false);
@@ -84,7 +107,6 @@ export default function AddProductModal({ closeModal, refreshProducts }) {
       className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[999] p-4"
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md transform animate-slideUp border border-slate-200/60 overflow-hidden">
-        
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6">
           <div className="flex items-center justify-between">
@@ -95,8 +117,12 @@ export default function AddProductModal({ closeModal, refreshProducts }) {
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Add New Product</h2>
-                <p className="text-blue-100 text-sm mt-1">Fill in the product details below</p>
+                <h2 className="text-xl font-bold text-white">
+                  {editProduct ? "Edit Product" : "Add New Product"}
+                </h2>
+                <p className="text-blue-100 text-sm mt-1">
+                  Fill in the product details below
+                </p>
               </div>
             </div>
             <button
@@ -110,8 +136,8 @@ export default function AddProductModal({ closeModal, refreshProducts }) {
           </div>
         </div>
 
-        {/* Form Content */}
-        <div className="p-6 space-y-5 max-h-[60vh] overflow-y-auto">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[60vh] overflow-y-auto">
           {errors.submit && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
               <div className="p-2 bg-red-100 rounded-lg">
@@ -123,7 +149,13 @@ export default function AddProductModal({ closeModal, refreshProducts }) {
             </div>
           )}
 
-         
+          {selectedBusinessCategory && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+              <p className="text-green-600 font-semibold">{selectedBusinessCategory.name}</p>
+              <p className="text-green-500 text-xs mt-1">ID: {selectedBusinessCategory.id}</p>
+            </div>
+          )}
+
           <div className="space-y-4">
             {/* Product Name */}
             <div>
@@ -159,7 +191,7 @@ export default function AddProductModal({ closeModal, refreshProducts }) {
               />
             </div>
 
-            {/* Price and Unit */}
+            {/* Price & Unit */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium flex items-center gap-2">
@@ -212,41 +244,42 @@ export default function AddProductModal({ closeModal, refreshProducts }) {
               />
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="border-t border-slate-200 bg-slate-50/80 p-6 flex justify-between items-center">
-          <button
-            onClick={closeModal}
-            disabled={isLoading}
-            className="px-6 py-3 rounded-xl text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 active:scale-95 disabled:opacity-50"
-          >
-            Cancel
-          </button>
+          {/* Footer */}
+          <div className="border-t border-slate-200 bg-slate-50/80 p-6 flex justify-between items-center">
+            <button
+              type="button"
+              onClick={closeModal}
+              disabled={isLoading}
+              className="px-6 py-3 rounded-xl text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 active:scale-95 disabled:opacity-50"
+            >
+              Cancel
+            </button>
 
-          <button
-            onClick={addProduct}
-            disabled={isLoading || !selectedBusinessCategory}
-            className="px-8 py-3 rounded-xl text-sm font-medium bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
-          >
-            {isLoading ? (
-              <>
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                </svg>
-                Adding...
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Save Product
-              </>
-            )}
-          </button>
-        </div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-8 py-3 rounded-xl text-sm font-medium bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  {editProduct ? "Updating..." : "Adding..."}
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  {editProduct ? "Update Product" : "Save Product"}
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

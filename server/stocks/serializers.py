@@ -78,10 +78,7 @@ class StockSerializer(serializers.ModelSerializer):
         queryset=BusinessCategory.objects.all(),
         required=True
     )
-    
-    # Add calculated fields for better data representation
-    total_purchase_value = serializers.SerializerMethodField(read_only=True)
-    total_sale_value = serializers.SerializerMethodField(read_only=True)
+
     
     class Meta:
         model = StockProduct
@@ -99,24 +96,8 @@ class StockSerializer(serializers.ModelSerializer):
             'current_stock_value',
             'net_weight',
             'created_at',
-            'total_purchase_value',
-            'total_sale_value'
         ]
-        read_only_fields = [
-            'id', 
-            'current_stock_quantity',  # Should be calculated, not set directly
-            'current_stock_value',     # Should be calculated, not set directly
-            'created_at'
-        ]
-    
-    def get_total_purchase_value(self, obj):
-        """Calculate total purchase value"""
-        return obj.purchase_quantity * obj.purchase_price
-    
-    def get_total_sale_value(self, obj):
-        """Calculate total potential sale value"""
-        return obj.current_stock_quantity * obj.sale_price
-    
+        
     def validate(self, data):
         """Validate stock data consistency"""
         # Validate that sale price is not less than purchase price

@@ -15,11 +15,6 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
-    search_fields = [
-        'product_name',
-        'product_code',  # Fixed: using actual field names from your model
-    ]
-
     filterset_fields = ['business_category']  # Fixed: only existing fields
 
     def get_queryset(self):
