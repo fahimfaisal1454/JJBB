@@ -64,6 +64,14 @@ import Division from "../pages/settings/division/page";
 import District from "../pages/settings/district/page";
 
 
+// Profile
+import UserProfile from "../pages/Profile/UserProfile";
+
+
+// Staffs
+import AddStaff from "../pages/Staffs/AddStaff";
+import StaffList from "../pages/Staffs/StaffList";
+
 
 
 
@@ -82,7 +90,15 @@ export default function AppRouter() {
       <Route element={<Layout />} >
 
         <Route path="/dashboard" element={<Dashboard />} />
-        
+
+        {/* Profile */}
+        <Route path="/dashboard/profile" element={<UserProfile />}></Route>
+
+        {/* Staffs */}
+        <Route path="/dashboard/staff-list" element={<StaffList />}></Route>
+        <Route path="/dashboard/add-staff" element={<AddStaff />}></Route>
+
+      
         {/* Sales */}
         <Route path="/sales/estimates" element={<Estimates />} />
         <Route path="/sales/invoices" element={<Invoices />} />
