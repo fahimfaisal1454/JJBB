@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { Fragment, useEffect, useState } from "react";
+import { Combobox, Transition } from "@headlessui/react";
+import { CheckIcon, ChevronUpDownIcon } from "@heroicons/react/20/solid";
 import AxiosInstance from "../../components/AxiosInstance";
 
 const todayStr = new Date().toISOString().slice(0, 10);
@@ -11,12 +13,41 @@ const emptyForm = {
   damaged_qty: "0",
 };
 
+function autoGenerateCode(name) {
+  if (!name) return "";
+  return name
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "-") // spaces -> dash
+    .replace(/[^A-Z0-9-]/g, ""); // remove special chars
+}
+
 export default function AssetsPage() {
   const [assets, setAssets] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [selectedAssetId, setSelectedAssetId] = useState(""); // dropdown
+
+  // control whether we keep updating code from name
+  const [autoCode, setAutoCode] = useState(true);
+
+  // combobox state
+  const [nameQuery, setNameQuery] = useState("");
+  const [codeQuery, setCodeQuery] = useState("");
+
+  const filteredByName =
+    nameQuery === ""
+      ? assets
+      : assets.filter((a) =>
+          a.name.toLowerCase().includes(nameQuery.toLowerCase())
+        );
+
+  const filteredByCode =
+    codeQuery === ""
+      ? assets
+      : assets.filter((a) =>
+          a.code.toLowerCase().includes(codeQuery.toLowerCase())
+        );
 
   // =============================
   // Load Assets
@@ -35,7 +66,7 @@ export default function AssetsPage() {
   }, []);
 
   // =============================
-  // Handle Input
+  // Handle basic inputs
   // =============================
   const onChange = (e) => {
     const { name, value } = e.target;
@@ -55,37 +86,9 @@ export default function AssetsPage() {
   const resetForm = () => {
     setForm(emptyForm);
     setEditingId(null);
-    setSelectedAssetId("");
-  };
-
-  // =============================
-  // Existing asset dropdown
-  // =============================
-  const onSelectExisting = (e) => {
-    const id = e.target.value;
-    setSelectedAssetId(id);
-
-    if (!id) {
-      // new asset mode
-      setForm(emptyForm);
-      setEditingId(null);
-      return;
-    }
-
-    const asset = assets.find((a) => String(a.id) === id);
-    if (!asset) return;
-
-    // Fill form with existing asset details, qty fields blank for new entry
-    setForm({
-      name: asset.name,
-      code: asset.code,
-      purchase_date: asset.purchase_date || todayStr,
-      total_qty: "",
-      damaged_qty: "0",
-    });
-
-    // we POST for “add more” behaviour, so NOT editing existing row
-    setEditingId(null);
+    setAutoCode(true);
+    setNameQuery("");
+    setCodeQuery("");
   };
 
   // =============================
@@ -124,7 +127,7 @@ export default function AssetsPage() {
         await AxiosInstance.put(`assets/${editingId}/`, payload);
         alert("Asset updated.");
       } else {
-        // add new OR add more to existing (backend merges by code)
+        // backend can merge by code for "add more" behaviour
         await AxiosInstance.post("assets/", payload);
         alert("Asset saved.");
       }
@@ -151,7 +154,9 @@ export default function AssetsPage() {
       damaged_qty: String(asset.damaged_qty),
     });
     setEditingId(asset.id);
-    setSelectedAssetId(String(asset.id)); // highlight in dropdown
+    setAutoCode(false); // don't overwrite code while editing
+    setNameQuery(asset.name);
+    setCodeQuery(asset.code);
   };
 
   // =============================
@@ -162,7 +167,6 @@ export default function AssetsPage() {
     try {
       await AxiosInstance.delete(`assets/${id}/`);
       await loadAssets();
-      // if we were editing this one, reset
       if (editingId === id) resetForm();
     } catch (e) {
       console.error("Delete failed", e);
@@ -214,63 +218,195 @@ export default function AssetsPage() {
         onSubmit={onSubmit}
         className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-4"
       >
-        {/* Existing asset selector */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              Select Existing Asset
-            </label>
-            <select
-              value={selectedAssetId}
-              onChange={onSelectExisting}
-              className="border border-gray-300 rounded px-3 py-1 w-full"
-            >
-              <option value="">New asset / custom</option>
-              {assets.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name} ({a.code})
-                </option>
-              ))}
-            </select>
-            <p className="text-[11px] text-slate-500 mt-1">
-              Choose an existing asset to add more quantity, or keep
-              &quot;New asset&quot; to create a new one.
-            </p>
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 pt-2">
-          {/* Name */}
-          <div>
+          {/* Asset Name with autocomplete (HeadlessUI Combobox) */}
+          <div className="col-span-1">
             <label className="block text-sm font-semibold text-gray-700 mb-1">
               Asset Name <span className="text-red-600">*</span>
             </label>
-            <input
-              name="name"
+            <Combobox
               value={form.name}
-              onChange={onChange}
-              type="text"
-              placeholder="Laptop"
-              className="border border-gray-300 rounded px-3 py-1 w-full"
-              required
-            />
+              onChange={(value) => {
+                // when user selects or presses enter
+                const match = assets.find((a) => a.name === value);
+                if (match) {
+                  setForm((p) => ({
+                    ...p,
+                    name: match.name,
+                    code: match.code,
+                  }));
+                  setAutoCode(false);
+                  setCodeQuery(match.code);
+                } else {
+                  setForm((p) => ({
+                    ...p,
+                    name: value,
+                    code: autoCode ? autoGenerateCode(value) : p.code,
+                  }));
+                }
+                setNameQuery("");
+              }}
+            >
+              <div className="relative">
+                <div className="relative w-full cursor-default overflow-hidden rounded border border-gray-300 bg-white text-left focus-within:ring-1 focus-within:ring-blue-500">
+                  <Combobox.Input
+                    className="w-full border-none py-1 pl-3 pr-10 text-sm leading-5 text-gray-900 focus:outline-none"
+                    placeholder="Laptop"
+                    displayValue={(value) => value}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setNameQuery(value);
+                      setForm((p) => ({
+                        ...p,
+                        name: value,
+                        code: autoCode ? autoGenerateCode(value) : p.code,
+                      }));
+                    }}
+                    required
+                  />
+                  <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">
+                    <ChevronUpDownIcon
+                      className="h-4 w-4 text-gray-400"
+                      aria-hidden="true"
+                    />
+                  </Combobox.Button>
+                </div>
+                <Transition
+                  as={Fragment}
+                  leave="transition ease-in duration-100"
+                  leaveFrom="opacity-100"
+                  leaveTo="opacity-0"
+                  afterLeave={() => {}}
+                >
+                  <Combobox.Options className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-none">
+                    {filteredByName.length === 0 && nameQuery !== "" ? (
+                      <div className="relative cursor-default select-none px-3 py-2 text-gray-500">
+                        Create "{nameQuery}"
+                      </div>
+                    ) : (
+                      filteredByName.map((item) => (
+                        <Combobox.Option
+                          key={item.id}
+                          value={item.name}
+                          className={({ active }) =>
+                            `relative cursor-pointer select-none py-2 pl-8 pr-3 ${
+                              active ? "bg-blue-600 text-white" : "text-gray-900"
+                            }`
+                          }
+                        >
+                          {({ active, selected }) => (
+                            <>
+                              <span
+                                className={`block truncate ${
+                                  selected ? "font-semibold" : "font-normal"
+                                }`}
+                              >
+                                {item.name} ({item.code})
+                              </span>
+                              {selected && (
+                                <span
+                                  className={`absolute inset-y-0 left-0 flex items-center pl-2 ${
+                                    active ? "text-white" : "text-blue-600"
+                                  }`}
+                                >
+                                  <CheckIcon className="h-4 w-4" />
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </Combobox.Option>
+                      ))
+                    )}
+                  </Combobox.Options>
+                </Transition>
+            </div>
+            </Combobox>
           </div>
 
-          {/* Code */}
-          <div>
+          {/* Code with autocomplete (HeadlessUI Combobox) */}
+          <div className="col-span-1">
             <label className="block text-sm font-semibold text-gray-700 mb-1">
               Code <span className="text-red-600">*</span>
             </label>
-            <input
-              name="code"
+            <Combobox
               value={form.code}
-              onChange={onChange}
-              type="text"
-              placeholder="FA-001"
-              className="border border-gray-300 rounded px-3 py-1 w-full"
-              required
-            />
-            {existingByCode && !selectedAssetId && (
+              onChange={(value) => {
+                setForm((p) => ({ ...p, code: value }));
+                setCodeQuery("");
+                setAutoCode(false);
+              }}
+            >
+              <div className="relative">
+                <div className="relative w-full cursor-default overflow-hidden rounded border border-gray-300 bg-white text-left focus-within:ring-1 focus-within:ring-blue-500">
+                  <Combobox.Input
+                    className="w-full border-none py-1 pl-3 pr-10 text-sm leading-5 text-gray-900 focus:outline-none"
+                    placeholder="AUTO-GENERATED"
+                    displayValue={(value) => value}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setCodeQuery(value);
+                      setForm((p) => ({ ...p, code: value }));
+                      setAutoCode(false);
+                    }}
+                    required
+                  />
+                  <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">
+                    <ChevronUpDownIcon
+                      className="h-4 w-4 text-gray-400"
+                      aria-hidden="true"
+                    />
+                  </Combobox.Button>
+                </div>
+                <Transition
+                  as={Fragment}
+                  leave="transition ease-in duration-100"
+                  leaveFrom="opacity-100"
+                  leaveTo="opacity-0"
+                >
+                  <Combobox.Options className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-none">
+                    {filteredByCode.length === 0 && codeQuery !== "" ? (
+                      <div className="relative cursor-default select-none px-3 py-2 text-gray-500">
+                        Use "{codeQuery}"
+                      </div>
+                    ) : (
+                      filteredByCode.map((item) => (
+                        <Combobox.Option
+                          key={item.id}
+                          value={item.code}
+                          className={({ active }) =>
+                            `relative cursor-pointer select-none py-2 pl-8 pr-3 ${
+                              active ? "bg-blue-600 text-white" : "text-gray-900"
+                            }`
+                          }
+                        >
+                          {({ active, selected }) => (
+                            <>
+                              <span
+                                className={`block truncate ${
+                                  selected ? "font-semibold" : "font-normal"
+                                }`}
+                              >
+                                {item.code} – {item.name}
+                              </span>
+                              {selected && (
+                                <span
+                                  className={`absolute inset-y-0 left-0 flex items-center pl-2 ${
+                                    active ? "text-white" : "text-blue-600"
+                                  }`}
+                                >
+                                  <CheckIcon className="h-4 w-4" />
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </Combobox.Option>
+                      ))
+                    )}
+                  </Combobox.Options>
+                </Transition>
+              </div>
+            </Combobox>
+            {existingByCode && (
               <p className="text-[11px] text-amber-600 mt-1">
                 An asset with this code already exists. Saving will add to it:
                 total {existingByCode.total_qty}, damaged{" "}
@@ -395,7 +531,10 @@ export default function AssetsPage() {
 
             {assets.length === 0 && (
               <tr>
-                <td colSpan={8} className="py-4 px-2 text-center text-slate-400">
+                <td
+                  colSpan={8}
+                  className="py-4 px-2 text-center text-slate-400"
+                >
                   No assets yet.
                 </td>
               </tr>
