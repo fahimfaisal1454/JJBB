@@ -13,7 +13,7 @@ export default function Stocks() {
   useEffect(() => {
     const fetchStocks = async () => {
       try {
-        const res = await AxiosInstance.get("/stocks/");
+        const res = await AxiosInstance.get("stocks/");
         setItems(res.data);
       } catch (err) {
         console.error("Failed to fetch stocks:", err);
