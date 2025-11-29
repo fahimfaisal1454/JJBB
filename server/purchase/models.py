@@ -38,9 +38,15 @@ class SalaryExpense(models.Model):
 
 
 class Purchase(models.Model):
-    supplier = models.ForeignKey(Vendor, on_delete=models.CASCADE)
+    vendor = models.ForeignKey(
+    Vendor,
+    on_delete=models.CASCADE,
+    related_name="purchases",
+    null=True,              # allow empty temporarily
+    blank=True
+)
     purchase_date = models.DateField()
-    invoice_no = models.CharField(max_length=100, blank=True, null = True)
+    invoice_no = models.CharField(max_length=100, blank=True, null=True)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2)
     discount_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     total_payable_amount = models.DecimalField(max_digits=12, decimal_places=2)
@@ -65,11 +71,13 @@ class Purchase(models.Model):
     def save(self, *args, **kwargs):
         if not self.invoice_no:
             self.invoice_no = self.generate_invoice_no()
-
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Invoice {self.invoice_no} - {self.supplier.supplier_name}"
+        # adjust this based on your Vendor model’s field name
+        # e.g. vendor_name / name / company_name
+        return f"Invoice {self.invoice_no} - {self.vendor.vendor_name}"
+
 
 
 
@@ -80,10 +88,10 @@ class PurchaseProduct(models.Model):
     purchase_quantity = models.PositiveIntegerField()
     purchase_price = models.DecimalField(max_digits=12, decimal_places=2)
     total_price = models.DecimalField(max_digits=12, decimal_places=2)
-    returned_quantity = models.PositiveIntegerField(default=0)  # New field for tracking returns
+    returned_quantity = models.PositiveIntegerField(default=0)
 
     def __str__(self):
-        return f"{self.product.part_no} ({self.purchase.invoice_no})"
+        return f"{self.product.product_code} ({self.purchase.invoice_no})"
 
 
 

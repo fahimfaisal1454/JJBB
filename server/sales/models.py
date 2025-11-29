@@ -33,29 +33,36 @@ class Sale(models.Model):
 class SaleProduct(models.Model):
     sale = models.ForeignKey(Sale, related_name='products', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    part_no = models.CharField(max_length=100)
+    # Use product_code instead of part_no
+    product_code = models.CharField(max_length=100)
+
     sale_quantity = models.PositiveIntegerField()
     sale_price = models.DecimalField(max_digits=12, decimal_places=2)
     percentage = models.DecimalField(max_digits=5, decimal_places=2)
     sale_price_with_percentage = models.DecimalField(max_digits=12, decimal_places=2)
     total_price = models.DecimalField(max_digits=12, decimal_places=2)
-    returned_quantity = models.PositiveIntegerField(default=0)  # New field for tracking returns
-
+    returned_quantity = models.PositiveIntegerField(default=0)
 
     def save(self, *args, **kwargs):
-        is_new = self._state.adding 
+        is_new = self._state.adding
         super().save(*args, **kwargs)
 
         if is_new:
-            stock = StockProduct.objects.filter(product=self.product, part_no=self.part_no).first()
+            # Adjust this lookup to match your StockProduct fields
+            stock = StockProduct.objects.filter(
+                product=self.product,
+                product_code=self.product_code
+            ).first()
             if stock:
                 stock.sale_quantity += self.sale_quantity
-                stock.current_stock_quantity = max(stock.current_stock_quantity - self.sale_quantity, 0)
+                stock.current_stock_quantity = max(
+                    stock.current_stock_quantity - self.sale_quantity, 0
+                )
                 stock.save()
 
-
     def __str__(self):
-        return f"{self.product.part_no} ({self.sale.invoice_no})"
+        # Assuming Product has product_code
+        return f"{self.product.product_code} ({self.sale.invoice_no})"
 
 
 class SaleReturn(models.Model):

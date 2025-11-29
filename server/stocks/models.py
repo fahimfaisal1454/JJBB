@@ -7,7 +7,7 @@ from master.models import BusinessCategory
 
 
 class Product(models.Model):
-    business_category = models.ForeignKey(BusinessCategory, on_delete=models.CASCADE)
+    business_category = models.ForeignKey(BusinessCategory, on_delete=models.CASCADE, null=True, blank=True)
     # image = models.ImageField(upload_to='product_images/', blank=True, null=True)
     product_name = models.CharField(max_length=250)
     product_code = models.CharField(max_length=250,blank=True, null=True)

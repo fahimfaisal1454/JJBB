@@ -31,10 +31,16 @@ class SalaryExpenseSerializer(serializers.ModelSerializer):
 
 class PurchaseProductSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)
+
     product_id = serializers.PrimaryKeyRelatedField(
         queryset=Product.objects.all(),
         source='product',
         write_only=True
+    )
+
+    product_no = serializers.CharField(
+        source='product.product_code',
+        read_only=True
     )
 
     class Meta:
@@ -43,12 +49,12 @@ class PurchaseProductSerializer(serializers.ModelSerializer):
             'id',
             'product',
             'product_id',
-            'part_no',
+            'product_no',
             'purchase_quantity',
             'purchase_price',
             'total_price',
+            'returned_quantity',
         ]
-
 
 # ----------------------------
 # Purchase Payment Serializer
@@ -70,23 +76,32 @@ class PurchasePaymentSerializer(serializers.ModelSerializer):
 # Supplier Purchase Serializer
 # ----------------------------
 class PurchaseSerializer(serializers.ModelSerializer):
+    # nested line-items & payments
     products = PurchaseProductSerializer(many=True)
-    payments = PurchasePaymentSerializer(many=True)
-    supplier = VendorSerializer(read_only=True)
-    supplier_id = serializers.PrimaryKeyRelatedField(
+    payments = PurchasePaymentSerializer(many=True, required=False)
+
+    # vendor fields
+    vendor = VendorSerializer(read_only=True)
+    vendor_id = serializers.PrimaryKeyRelatedField(
         queryset=Vendor.objects.all(),
-        source='supplier',
+        source='vendor',          # maps to Purchase.vendor
         write_only=True
     )
+
+    # computed fields from model @property
     total_returned_quantity = serializers.IntegerField(read_only=True)
-    total_returned_value = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    total_returned_value = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        read_only=True
+    )
 
     class Meta:
         model = Purchase
         fields = [
             'id',
-            'supplier',
-            'supplier_id',
+            'vendor',                  # read-only nested vendor
+            'vendor_id',               # write-only FK id
             'purchase_date',
             'invoice_no',
             'total_amount',
@@ -101,20 +116,25 @@ class PurchaseSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at']
 
     def create(self, validated_data):
-        products_data = validated_data.pop('products')
-        payments_data = validated_data.pop('payments')
+        products_data = validated_data.pop('products', [])
+        payments_data = validated_data.pop('payments', [])
+
+        # creates Purchase with vendor, purchase_date, totals, etc.
         purchase = Purchase.objects.create(**validated_data)
 
+        # create line items
         for product in products_data:
             PurchaseProduct.objects.create(purchase=purchase, **product)
 
+        # create payments (if any)
         for payment in payments_data:
             PurchasePayment.objects.create(purchase=purchase, **payment)
 
         return purchase
 
     def update(self, instance, validated_data):
-        instance.supplier = validated_data.get('supplier', instance.supplier)
+        # update simple fields; not touching nested products/payments here
+        instance.vendor = validated_data.get('vendor', instance.vendor)
         instance.purchase_date = validated_data.get('purchase_date', instance.purchase_date)
         instance.invoice_no = validated_data.get('invoice_no', instance.invoice_no)
         instance.total_amount = validated_data.get('total_amount', instance.total_amount)
