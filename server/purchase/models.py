@@ -5,7 +5,7 @@ from people.models import Vendor
 from stocks.models import Product
 from django.utils.timezone import now
 from django.utils.text import slugify
-
+from authentication.models import Staffs
 
 class Expense(models.Model):
     cost_category = models.ForeignKey(
@@ -21,7 +21,20 @@ class Expense(models.Model):
     def __str__(self):
         return f"{self.cost_category} - {self.amount}"
     
+class SalaryExpense(models.Model):
+    staff = models.ForeignKey(
+        Staffs,
+        on_delete=models.PROTECT,
+        related_name="salary_expenses",
+    )
+    # '2025-01' etc. – simple and easy to filter
+    salary_month = models.CharField(max_length=7)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    note = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"{self.staff} - {self.salary_month} - {self.amount}"
 
 
 class Purchase(models.Model):

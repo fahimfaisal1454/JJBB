@@ -5,6 +5,7 @@ from .views import *
 
 router = DefaultRouter()
 router.register(r'expenses', ExpenseViewSet, basename='expenses')
+router.register(r"salary-expenses", SalaryExpenseViewSet, basename="salary-expenses")
 router.register(r'supplier-purchases', SupplierPurchaseViewSet)
 # router.register(r'supplier-purchase-returns', SupplierPurchaseReturnViewSet)
 
