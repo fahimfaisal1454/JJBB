@@ -4,7 +4,7 @@ import AxiosInstance from "../../components/AxiosInstance";
 import { toast } from "react-hot-toast";
 
 export default function CustomerProductSale() {
-  // Custom styles for react-select with vertical centering
+  // ---------- Custom Select Styles ----------
   const customSelectStyles = {
     control: (base, state) => ({
       ...base,
@@ -104,7 +104,7 @@ export default function CustomerProductSale() {
     menuList: (base) => ({ ...base, fontSize: "0.875rem" }),
   };
 
-  // Customer state
+  // ---------- Customer State ----------
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerData, setCustomerData] = useState({
@@ -123,7 +123,7 @@ export default function CustomerProductSale() {
     previous_due_amount: "",
   });
 
-  // Product / stock state
+  // ---------- Product / Stock ----------
   const [productList, setProductList] = useState([]);
   const [stockList, setStockList] = useState([]);
 
@@ -135,7 +135,7 @@ export default function CustomerProductSale() {
   const [discountAmount, setDiscountAmount] = useState("");
   const [totalPayableAmount, setTotalPayableAmount] = useState(0);
 
-  // Product selection/calculation state
+  // Product selection/calculation
   const [saleMRP, setSaleMRP] = useState("");
   const [price, setPrice] = useState("");
   const [percentage, setPercentage] = useState("");
@@ -146,42 +146,45 @@ export default function CustomerProductSale() {
   const [selectedProductCode, setSelectedProductCode] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null); // { id, product_code }
 
-  // Payment state
+  // ---------- Payment State ----------
   const [paymentModes, setPaymentModes] = useState([]);
   const [banks, setBanks] = useState([]);
   const [paymentData, setPaymentData] = useState({
-    paymentMode: "", // store paymentMode as id
+    paymentMode: "", // id of payment mode
     bankName: "",
     accountNo: "",
     chequeNo: "",
     paidAmount: "",
+    remarks: "",
   });
   const [payments, setPayments] = useState([]);
   const [totalPaidAmount, setTotalPaidAmount] = useState(0);
 
-  // Fetch customers + products
+  // ---------- Fetch customers + products ----------
   useEffect(() => {
     const fetchInitial = async () => {
       try {
         const [custRes, prodRes] = await Promise.all([
-          AxiosInstance.get("/customers/"),
-          AxiosInstance.get("/products/"),
+          AxiosInstance.get("customers/"),
+          AxiosInstance.get("products/"),
         ]);
         setCustomers(custRes.data);
         setProductList(prodRes.data);
       } catch (error) {
+        console.error(error);
         toast.error("Failed to load customers or products");
       }
     };
     fetchInitial();
   }, []);
 
-  // Fetch stocks
+  // ---------- Fetch stocks ----------
   const fetchStocks = async () => {
     try {
-      const res = await AxiosInstance.get("/stocks/");
+      const res = await AxiosInstance.get("stocks/");
       setStockList(res.data);
     } catch (err) {
+      console.error(err);
       toast.error("Failed to load stock data");
     }
   };
@@ -190,13 +193,13 @@ export default function CustomerProductSale() {
     fetchStocks();
   }, []);
 
-  // Fetch payment modes & banks
+  // ---------- Fetch payment modes & banks ----------
   useEffect(() => {
     const fetchPaymentData = async () => {
       try {
         const [pmRes, bankRes] = await Promise.all([
-          AxiosInstance.get("/payment-mode/"),
-          AxiosInstance.get("/banks/"),
+          AxiosInstance.get("payment-mode/"),
+          AxiosInstance.get("banks/"),
         ]);
         setPaymentModes(
           pmRes.data.map((pm) => ({
@@ -218,15 +221,13 @@ export default function CustomerProductSale() {
     fetchPaymentData();
   }, []);
 
-  // Customer options
+  // ---------- Select Options ----------
   const customerOptions = customers.map((c) => ({
     label: c.customer_name,
     value: c.id,
     ...c,
   }));
 
-  // Product select options
-  // Assuming backend returns: id, product_name, product_code, etc.
   const productNameOptions = productList.map((p) => ({
     label: p.product_name,
     value: p.id,
@@ -239,7 +240,7 @@ export default function CustomerProductSale() {
     product_name: p.product_name,
   }));
 
-  // Customer handlers
+  // ---------- Customer handlers ----------
   const handleCustomerChange = (e) => {
     const { name, value } = e.target;
     setCustomerData((prev) => ({
@@ -285,26 +286,30 @@ export default function CustomerProductSale() {
     }
   };
 
-  // Common function to set product data from product object
+  // ---------- Set product data from selected product ----------
   const setProductData = (product) => {
     if (!product) return;
 
-    // find stock by product + product_code (or whatever your stock model uses)
-    const stockItem = stockList.find(
-      (s) =>
-        s.product?.id === product.id &&
-        (s.product_code === product.product_code ||
-          s.part_no === product.product_code) // fallback if your stock still uses part_no for now
-    );
+    // StockProduct has FK "product", so match only by product.id
+    const stockItem = stockList.find((s) => s.product?.id === product.id);
 
     const stockQty = stockItem ? stockItem.current_stock_quantity : 0;
     setCurrentStock(stockQty);
 
-    const basePrice = stockItem ? parseFloat(stockItem.purchase_price || 0) : 0;
-    const mrpValue = basePrice;
-    setSaleMRP(mrpValue.toFixed(2));
-    setPrice(mrpValue.toFixed(2));
+    // Base price: prefer sale_price, then purchase_price, then product.price
+    const basePrice = stockItem
+      ? parseFloat(
+          stockItem.sale_price ??
+            stockItem.purchase_price ??
+            product.price ??
+            0
+        )
+      : parseFloat(product.price ?? 0);
 
+    const mrpValue = isNaN(basePrice) ? 0 : basePrice;
+
+    setSaleMRP(mrpValue.toFixed(2)); // base price before % markup
+    setPrice(mrpValue.toFixed(2));   // will be updated after %
     setSaleQuantity("");
     setPercentage("");
     setTotalPrice("0.00");
@@ -372,47 +377,43 @@ export default function CustomerProductSale() {
     }
   };
 
-  // Recalculate when percentage or quantity changes
+  // ---------- Recalculate price & totals ----------
   useEffect(() => {
     if (!selectedProduct) return;
 
-    const stockItem = stockList.find(
-      (s) =>
-        s.product?.id === selectedProduct.id &&
-        (s.product_code === selectedProduct.product_code ||
-          s.part_no === selectedProduct.product_code)
-    );
-
-    if (!stockItem) {
-      setTotalPrice("0.00");
-      setCurrentStock(0);
-      return;
-    }
-
     const qty = parseInt(saleQuantity) || 0;
-    if (qty > stockItem.current_stock_quantity) {
-      toast.error(
-        `Sale quantity cannot exceed current stock (${stockItem.current_stock_quantity})`
-      );
-      setSaleQuantity(stockItem.current_stock_quantity);
+
+    if (qty > currentStock) {
+      if (currentStock > 0) {
+        toast.error(
+          `Sale quantity cannot exceed current stock (${currentStock})`
+        );
+        setSaleQuantity(currentStock);
+      } else {
+        toast.error("No stock available for this product");
+        setSaleQuantity(0);
+      }
       return;
     }
 
-    const basePrice = parseFloat(stockItem.purchase_price || 0);
+    const basePrice = parseFloat(saleMRP) || 0;
     const perc = parseFloat(percentage) || 0;
 
+    // price after applying percentage
     const priceWithPerc = basePrice + (basePrice * perc) / 100;
-    setPrice(priceWithPerc.toFixed(2));
+    const finalPrice = isNaN(priceWithPerc) ? 0 : priceWithPerc;
+
+    setPrice(finalPrice.toFixed(2));
 
     if (qty > 0) {
-      const tPrice = priceWithPerc * qty;
+      const tPrice = finalPrice * qty;
       setTotalPrice(tPrice.toFixed(2));
     } else {
       setTotalPrice("0.00");
     }
-  }, [percentage, saleQuantity, selectedProduct, stockList]);
+  }, [percentage, saleQuantity, selectedProduct, currentStock, saleMRP]);
 
-  // Add product to table
+  // ---------- Add product to list ----------
   const addProduct = () => {
     if (!selectedProductName || !selectedProductCode || !selectedProduct) {
       toast.error("Please select a product");
@@ -443,8 +444,8 @@ export default function CustomerProductSale() {
       productCode: selectedProduct.product_code,
       currentStock: parseInt(currentStock) || 0,
       saleQuantity: parseInt(saleQuantity),
-      saleMRP: parseFloat(saleMRP) || 0,
-      price: parseFloat(price) || 0,
+      saleMRP: parseFloat(saleMRP) || 0,   // base price
+      price: parseFloat(price) || 0,       // final price after %
       percentage: parseFloat(percentage) || 0,
       totalPrice: parseFloat(totalPrice) || 0,
     };
@@ -452,7 +453,7 @@ export default function CustomerProductSale() {
     setAddedProducts((prev) => [...prev, newProd]);
     toast.success("Product added successfully");
 
-    // Reset product fields
+    // Reset fields
     setSelectedProductName(null);
     setSelectedProductCode(null);
     setSelectedProduct(null);
@@ -464,12 +465,12 @@ export default function CustomerProductSale() {
     setTotalPrice("0.00");
   };
 
-  // Remove product
+  // ---------- Remove product ----------
   const removeProduct = (idx) => {
     setAddedProducts((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  // Totals (amount & payable)
+  // ---------- Total amount & payable ----------
   useEffect(() => {
     const total = addedProducts.reduce(
       (acc, p) => acc + parseFloat(p.totalPrice || 0),
@@ -482,7 +483,7 @@ export default function CustomerProductSale() {
     setTotalPayableAmount(payable > 0 ? payable : 0);
   }, [addedProducts, discountAmount]);
 
-  // Payment handlers
+  // ---------- Payment handlers ----------
   const handlePaymentChange = (name, value) => {
     setPaymentData((prev) => ({ ...prev, [name]: value }));
   };
@@ -501,6 +502,7 @@ export default function CustomerProductSale() {
       accountNo: "",
       chequeNo: "",
       paidAmount: "",
+      remarks: "",
     });
   };
 
@@ -525,7 +527,7 @@ export default function CustomerProductSale() {
   const isCheque = selectedPaymentModeLabel === "Cheque";
   const isBank = selectedPaymentModeLabel === "Bank";
 
-  // Submit sale
+  // ---------- Submit sale ----------
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -551,31 +553,38 @@ export default function CustomerProductSale() {
           product_id: product.id,
           product_code: product.productCode,
           sale_quantity: parseInt(product.saleQuantity),
-          sale_price: parseFloat(product.price),
+          // base price before %
+          sale_price: parseFloat(product.saleMRP) || 0,
           percentage: parseFloat(product.percentage) || 0,
-          sale_price_with_percentage: parseFloat(
-            product.price * (1 + (product.percentage || 0) / 100)
-          ).toFixed(2),
-          total_price: parseFloat(product.totalPrice),
+          // final price after %
+          sale_price_with_percentage: parseFloat(product.price) || 0,
+          total_price: parseFloat(product.totalPrice) || 0,
         })),
 
-        payments: payments.map((payment) => ({
-          payment_mode: payment.paymentMode, // should be id
-          bank_name: payment.bankName || null,
-          account_no: payment.accountNo || null,
-          cheque_no: payment.chequeNo || null,
-          paid_amount: parseFloat(payment.paidAmount) || 0,
-          remarks: payment.remarks || null,
-        })),
+        payments: payments.map((payment) => {
+          const modeObj = paymentModes.find(
+            (m) => m.value === payment.paymentMode
+          );
+          const paymentModeLabel = modeObj ? modeObj.label : null;
+
+          return {
+            payment_mode: paymentModeLabel,
+            bank_name_id: payment.bankName || null,
+            account_no: payment.accountNo || null,
+            cheque_no: payment.chequeNo || null,
+            paid_amount: parseFloat(payment.paidAmount) || 0,
+            remarks: payment.remarks || null,
+          };
+        }),
       };
 
       console.log("Submitting payload:", JSON.stringify(payload, null, 2));
 
-      await AxiosInstance.post("/sales/", payload);
+      await AxiosInstance.post("sales/", payload);
       toast.success("Sale created successfully!");
 
       resetForm();
-      fetchStocks();
+      fetchStocks(); // refresh inventory after sale
     } catch (error) {
       console.error("Submission error:", error.response?.data || error);
       if (error.response?.data) {
@@ -589,7 +598,9 @@ export default function CustomerProductSale() {
         } else {
           for (const [field, errors] of Object.entries(data)) {
             toast.error(
-              `${field}: ${Array.isArray(errors) ? errors.join(" ") : errors}`
+              `${field}: ${
+                Array.isArray(errors) ? errors.join(" ") : errors
+              }`
             );
           }
         }
@@ -599,7 +610,7 @@ export default function CustomerProductSale() {
     }
   };
 
-  // Reset entire form
+  // ---------- Reset form ----------
   const resetForm = () => {
     setSelectedCustomer(null);
     setCustomerData({
@@ -635,6 +646,7 @@ export default function CustomerProductSale() {
       accountNo: "",
       chequeNo: "",
       paidAmount: "",
+      remarks: "",
     });
 
     setSaleMRP("");
@@ -645,7 +657,7 @@ export default function CustomerProductSale() {
     setCurrentStock(0);
   };
 
-  // Enter key navigation
+  // ---------- Enter key navigation ----------
   const handleKeyDown = (e) => {
     if (e.key !== "Enter") return;
 
@@ -679,6 +691,7 @@ export default function CustomerProductSale() {
     }
   };
 
+  // ---------- RENDER ----------
   return (
     <div className="max-w-7xl mx-auto p-4">
       {/* Customer Section */}
@@ -1147,7 +1160,10 @@ export default function CustomerProductSale() {
                 ) || null
               }
               onChange={(selected) =>
-                handlePaymentChange("paymentMode", selected ? selected.value : "")
+                handlePaymentChange(
+                  "paymentMode",
+                  selected ? selected.value : ""
+                )
               }
               placeholder="Select"
               className="text-sm"
