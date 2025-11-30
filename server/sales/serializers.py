@@ -45,11 +45,18 @@ class SalePaymentSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
+       #  ADD THIS FIELD
+    sale_id = serializers.PrimaryKeyRelatedField(
+        queryset=Sale.objects.all(),
+        source='sale',
+        write_only=True,
+    )
 
     class Meta:
         model = SalePayment
         fields = [
             'id',
+            'sale_id', 
             'payment_mode',
             'bank_name',
             'bank_name_id',

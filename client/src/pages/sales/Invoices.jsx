@@ -3,30 +3,28 @@ import Select from "react-select";
 import AxiosInstance from "../../components/AxiosInstance";
 import toast from "react-hot-toast";
 
-
 export default function SalesList() {
   const customSelectStyles = {
     control: (base, state) => ({
       ...base,
-      minHeight: "30px",
-      height: "30px",
+      minHeight: "34px",
+      height: "34px",
       fontSize: "0.875rem",
-      border: "1px solid #000000",
-      borderRadius: "0.275rem",
-      borderColor: state.isFocused ? "#000000" : "#d1d5db",
-      boxShadow: state.isFocused ? "0 0 0 1px #000000" : "none",
-      // Remove default padding
+      border: "1px solid #e5e7eb",
+      borderRadius: "0.375rem",
+      borderColor: state.isFocused ? "#0f766e" : "#e5e7eb",
+      boxShadow: state.isFocused ? "0 0 0 1px #0f766e" : "none",
       paddingTop: "0px",
       paddingBottom: "0px",
-      // Ensure flex alignment
       display: "flex",
       alignItems: "center",
+      backgroundColor: "#ffffff",
     }),
 
     valueContainer: (base) => ({
       ...base,
-      height: "30px",
-      padding: "0 6px",
+      height: "34px",
+      padding: "0 8px",
       display: "flex",
       alignItems: "center",
       flexWrap: "nowrap",
@@ -45,7 +43,7 @@ export default function SalesList() {
     singleValue: (base) => ({
       ...base,
       fontSize: "0.875rem",
-      color: "#000000",
+      color: "#111827",
       margin: "0",
       position: "absolute",
       top: "50%",
@@ -57,7 +55,7 @@ export default function SalesList() {
       fontSize: "0.875rem",
       margin: "0",
       padding: "0",
-      color: "#000000",
+      color: "#111827",
       position: "absolute",
       top: "50%",
       transform: "translateY(-50%)",
@@ -65,15 +63,15 @@ export default function SalesList() {
 
     indicatorsContainer: (base) => ({
       ...base,
-      height: "30px",
+      height: "34px",
       display: "flex",
       alignItems: "center",
     }),
 
     indicatorSeparator: (base) => ({
       ...base,
-      backgroundColor: "#d1d5db",
-      height: "16px", // Shorter separator
+      backgroundColor: "#e5e7eb",
+      height: "16px",
       marginTop: "auto",
       marginBottom: "auto",
     }),
@@ -86,7 +84,7 @@ export default function SalesList() {
       alignItems: "center",
       justifyContent: "center",
       "&:hover": {
-        color: "#000000",
+        color: "#0f172a",
       },
     }),
 
@@ -98,7 +96,7 @@ export default function SalesList() {
       alignItems: "center",
       justifyContent: "center",
       "&:hover": {
-        color: "#000000",
+        color: "#0f172a",
       },
     }),
 
@@ -106,19 +104,20 @@ export default function SalesList() {
       ...base,
       fontSize: "0.875rem",
       backgroundColor: state.isSelected
-        ? "#000000"
+        ? "#0f766e"
         : state.isFocused
-        ? "#f3f4f6"
+        ? "#ecfeff"
         : "white",
-      color: state.isSelected ? "white" : "#000000",
+      color: state.isSelected ? "white" : "#111827",
       "&:hover": {
-        backgroundColor: state.isSelected ? "#000000" : "#f3f4f6",
+        backgroundColor: state.isSelected ? "#0f766e" : "#ecfeff",
       },
     }),
 
     menu: (base) => ({
       ...base,
       fontSize: "0.875rem",
+      zIndex: 30,
     }),
 
     menuList: (base) => ({
@@ -138,7 +137,8 @@ export default function SalesList() {
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [returnModalSale, setReturnModalSale] = useState(null);
   const [returnData, setReturnData] = useState([]);
-    const [payModalSale, setPayModalSale] = useState(null);
+  const [payModalSale, setPayModalSale] = useState(null);
+
   const [formData, setFormData] = useState({
     returnDate: new Date().toISOString().slice(0, 10),
     productName: "",
@@ -152,6 +152,7 @@ export default function SalesList() {
     returnRemarks: "",
     selectedProductIndex: 0,
   });
+
   const [errors, setErrors] = useState({});
 
   const [filters, setFilters] = useState({
@@ -162,6 +163,7 @@ export default function SalesList() {
 
   const itemsPerPage = 5;
   const returnModalRef = useRef(null);
+  const payModalRef = useRef(null);
 
   // Data fetching functions
   const fetchSales = async () => {
@@ -188,7 +190,6 @@ export default function SalesList() {
     }
   };
 
-  // Add this function to fetch return data
   const fetchReturnData = async () => {
     try {
       const response = await AxiosInstance.get("/sale-returns/");
@@ -206,7 +207,7 @@ export default function SalesList() {
         await Promise.all([
           fetchSales(),
           fetchStockData(),
-          fetchReturnData(), // Add return data fetching to initial load
+          fetchReturnData(),
           AxiosInstance.get("/districts/").then((res) => {
             setDistricts(res.data.map((d) => ({ value: d.id, label: d.name })));
           }),
@@ -302,7 +303,6 @@ export default function SalesList() {
 
     setReturnModalSale(sale);
 
-    // Initialize all fields immediately
     setFormData({
       returnDate: new Date().toISOString().slice(0, 10),
       productName: firstProduct.product?.product_name || "",
@@ -342,7 +342,7 @@ export default function SalesList() {
   };
 
   const handleProductSelectChange = (e) => {
-    const selectedIndex = parseInt(e.target.value);
+    const selectedIndex = parseInt(e.target.value, 10);
     const selectedProduct = returnModalSale.products[selectedIndex];
 
     const matchedStock = stockData.find(
@@ -350,9 +350,7 @@ export default function SalesList() {
     );
 
     const alreadyReturnedQty = returnData
-      .filter(
-        (returnItem) => returnItem.sale_product?.id === selectedProduct.id
-      )
+      .filter((returnItem) => returnItem.sale_product?.id === selectedProduct.id)
       .reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0);
 
     setFormData((prev) => ({
@@ -375,7 +373,6 @@ export default function SalesList() {
     const saleQty = parseFloat(formData.saleQty) || 0;
     const alreadyReturnedQty = parseFloat(formData.alreadyReturnQty) || 0;
 
-    // Validation
     if (finalReturnQty <= 0) {
       setErrors({ ...errors, returnQty: "Please enter a valid quantity" });
       return;
@@ -394,8 +391,8 @@ export default function SalesList() {
     }
 
     try {
-      const response = await AxiosInstance.post("/sale-returns/", {
-        sale_product_id: saleProductId,
+      await AxiosInstance.post("/sale-returns/", {
+        sale_product: saleProductId,
         quantity: finalReturnQty,
         return_date: formData.returnDate,
         remarks: formData.returnRemarks,
@@ -403,14 +400,8 @@ export default function SalesList() {
 
       toast.success("Return created successfully");
 
-      // Refresh all three datasets after successful return submission
-      await Promise.all([
-        fetchStockData(),
-        fetchSales(),
-        fetchReturnData(), // Add this line to refresh return data
-      ]);
+      await Promise.all([fetchStockData(), fetchSales(), fetchReturnData()]);
 
-      // Close modal and reset
       returnModalRef.current?.close();
       setReturnModalSale(null);
       setFormData({
@@ -433,6 +424,7 @@ export default function SalesList() {
     }
   };
 
+  // ======== CLEANED-UP INVOICE PDF (no brand / part no) =========
   const handleGenerateSalePdf = (sale) => {
     const totalQty = sale.products.reduce(
       (sum, item) => sum + parseFloat(item.sale_quantity || 0),
@@ -441,7 +433,9 @@ export default function SalesList() {
     const totalAmount = parseFloat(sale.total_amount || 0);
     const discount = parseFloat(sale.discount_amount || 0);
     const grossTotal = totalAmount - discount;
-    const previousBalance = parseFloat(sale.customer?.previous_due_amount || 0);
+    const previousBalance = parseFloat(
+      sale.customer?.previous_due_amount || 0
+    );
     const netAmount = grossTotal;
     const paidAmount =
       sale.payments?.reduce(
@@ -609,8 +603,6 @@ export default function SalesList() {
         <thead>
           <tr>
             <th class="text-center">Sl No</th>
-            <th class="text-center">Brand Name</th>
-            <th class="text-center">Part No</th>
             <th class="text-center">Product Name</th>
             <th class="text-center">Quantity</th>
             <th class="text-center">MRP</th>
@@ -624,11 +616,6 @@ export default function SalesList() {
               (item, index) => `
             <tr>
               <td class="text-center">${index + 1}</td>
-              <td class="text-center">${
-                item.product?.category_detail?.company_detail?.company_name ||
-                "N/A"
-              }</td>
-              <td class="text-center">${item.part_no || "N/A"}</td>
               <td class="text-center">${
                 item.product?.product_name || "N/A"
               }</td>
@@ -649,12 +636,12 @@ export default function SalesList() {
             )
             .join("")}
           <tr>
-            <td colspan="3" style="border: none;"></td>
+            <td colspan="2" style="border: none;"></td>
             <td style="border: none;">Total Quantity</td>
             <td style="border: none;" class="text-right"><strong>${totalQty.toFixed(
               2
             )}</strong></td>
-            <td colspan="3" style="border: none;"></td>
+            <td colspan="2" style="border: none;"></td>
           </tr>
         </tbody>
       </table>
@@ -710,7 +697,7 @@ export default function SalesList() {
     printWindow.document.close();
   };
 
-
+  // Banks / payments
   const [banks, setBanks] = useState([]);
   const [paymentModes, setPaymentModes] = useState([]);
   const [editingPayment, setEditingPayment] = useState(null);
@@ -726,7 +713,6 @@ export default function SalesList() {
   const [isBank, setIsBank] = useState(false);
   const [isCheque, setIsCheque] = useState(false);
 
-  // Fetch banks and payment modes on mount
   useEffect(() => {
     const fetchBanks = async () => {
       try {
@@ -758,22 +744,60 @@ export default function SalesList() {
 
     fetchBanks();
     fetchPaymentModes();
-  }, [AxiosInstance, toast]);
+  }, []);
 
-  // Get bank name label from id
-  const getBankName = (bankId) => {
+  // Open Pay dialog when payModalSale is set
+  useEffect(() => {
+    if (payModalSale && payModalRef.current) {
+      // reset form & default paid amount to current due
+      setEditingPayment(null);
+      setIsBank(false);
+      setIsCheque(false);
+
+      const totalPaid =
+        payModalSale.payments?.reduce(
+          (acc, p) => acc + parseFloat(p.paid_amount || 0),
+          0
+        ) || 0;
+      const due =
+        parseFloat(payModalSale.total_payable_amount || 0) - totalPaid;
+
+      setPaymentData({
+        paymentMode: "",
+        bankName: "",
+        accountNo: "",
+        chequeNo: "",
+        paidAmount: due > 0 ? due.toFixed(2) : "",
+      });
+
+      payModalRef.current.showModal();
+    }
+  }, [payModalSale]);
+
+  const getBankName = (bank) => {
+    if (!bank) return "N/A";
+
+    const bankId =
+      typeof bank === "object" && bank !== null ? bank.id : Number(bank);
     if (!bankId) return "N/A";
-    const bank = banks.find((b) => b.value === Number(bankId));
-    return bank?.label || "N/A";
+
+    const option = banks.find((b) => b.value === bankId);
+    return option?.label || "N/A";
   };
 
-  // Get payment mode name from id
-  const getPaymentModeName = (id) => {
-    const mode = paymentModes.find((pm) => pm.value === Number(id));
-    return mode?.label || "N/A";
+  const getPaymentModeName = (value) => {
+    if (!value) return "N/A";
+
+    // If backend stored plain string like "Cash", "Bank", etc.
+    if (typeof value === "string" && isNaN(Number(value))) {
+      return value;
+    }
+
+    const numericId = Number(value);
+    const mode = paymentModes.find((pm) => pm.value === numericId);
+    return mode?.label || String(value);
   };
 
-  // Handle input/select changes
   const handlePaymentChange = (field, value) => {
     setPaymentData((prev) => ({ ...prev, [field]: value }));
 
@@ -784,7 +808,6 @@ export default function SalesList() {
       setIsBank(modeLabel === "bank");
       setIsCheque(modeLabel === "cheque");
 
-      // Clear bank and cheque related fields if mode changes
       if (modeLabel !== "bank") {
         setPaymentData((prev) => ({ ...prev, bankName: "", accountNo: "" }));
       }
@@ -794,7 +817,6 @@ export default function SalesList() {
     }
   };
 
-  // Reset form to initial state
   const handleResetPaymentForm = () => {
     setEditingPayment(null);
     setPaymentData({
@@ -808,64 +830,109 @@ export default function SalesList() {
     setIsCheque(false);
   };
 
-  // Save new payment
-  const handleSavePayment = () => {
-    const newPaymentData = {
-      payment_mode: paymentData.paymentMode || "",
-      bank_name: paymentData.bankName || "",
+  const buildPaymentPayload = () => {
+    if (!payModalSale) return null;
+
+    const paid = parseFloat(paymentData.paidAmount || 0);
+    if (!paid || paid <= 0) {
+      toast.error("Enter a valid paid amount.");
+      return null;
+    }
+
+    const totalPaid =
+      payModalSale.payments?.reduce(
+        (acc, p) => acc + parseFloat(p.paid_amount || 0),
+        0
+      ) || 0;
+    const due =
+      parseFloat(payModalSale.total_payable_amount || 0) - totalPaid;
+
+    if (paid > due) {
+      toast.error("Paid amount cannot be greater than due.");
+      return null;
+    }
+
+    const selectedMode = paymentModes.find(
+      (opt) => opt.value === Number(paymentData.paymentMode)
+    );
+    const paymentModeLabel = selectedMode?.label || "";
+
+    // 🔥 NOTE: sale_id key to match serializer
+    return {
+      sale_id: payModalSale.id,
+      payment_mode: paymentModeLabel,
+      bank_name_id: paymentData.bankName || null,
       account_no: paymentData.accountNo || "",
       cheque_no: paymentData.chequeNo || "",
-      paid_amount: paymentData.paidAmount || "0.00",
+      paid_amount: paid.toFixed(2),
+      remarks: "",
     };
-    console.log("Saving payment:", newPaymentData);
-
-    // TODO: API call to save payment here
-
-    handleResetPaymentForm();
   };
 
-  // Edit existing payment: fill form with data
+  const handleSavePayment = async () => {
+    const payload = buildPaymentPayload();
+    if (!payload) return;
+
+    try {
+      await AxiosInstance.post("/sale-payments/", payload);
+      toast.success("Payment saved successfully.");
+
+      await fetchSales();
+      setPayModalSale(null);
+      handleResetPaymentForm();
+      payModalRef.current?.close();
+    } catch (error) {
+      console.error("Error saving payment:", error);
+      console.log("Server says:", error.response?.data);
+      toast.error("Failed to save payment.");
+    }
+  };
+
   const handleEditClick = (payment) => {
+    // Map payment_mode string (e.g. "Cash") to option value
+    const modeOption = paymentModes.find(
+      (opt) =>
+        String(opt.label).toLowerCase() ===
+        String(payment.payment_mode || "").toLowerCase()
+    );
+
     const editData = {
-      paymentMode: payment.payment_mode ? Number(payment.payment_mode) : "",
-      bankName: payment.bank_name ? Number(payment.bank_name) : "",
+      paymentMode: modeOption?.value || "",
+      bankName: payment.bank_name?.id || "",
       accountNo: payment.account_no || "",
       chequeNo: payment.cheque_no || "",
       paidAmount: payment.paid_amount ? String(payment.paid_amount) : "",
     };
     setPaymentData(editData);
 
-    if (payment.payment_mode && paymentModes.length > 0) {
-      const selectedMode = paymentModes.find(
-        (opt) => opt.value === Number(payment.payment_mode)
-      );
-      const modeLabel = selectedMode ? selectedMode.label.toLowerCase() : "";
-      setIsBank(modeLabel === "bank");
-      setIsCheque(modeLabel === "cheque");
-    } else {
-      setIsBank(false);
-      setIsCheque(false);
-    }
+    const modeLabel = String(payment.payment_mode || "").toLowerCase();
+    setIsBank(modeLabel === "bank");
+    setIsCheque(modeLabel === "cheque");
+
     setEditingPayment(payment.id);
   };
 
-  // Update existing payment
-  const handleUpdatePayment = () => {
-    const updatedData = {
-      payment_mode: paymentData.paymentMode || "",
-      bank_name: paymentData.bankName || "",
-      account_no: paymentData.accountNo || "",
-      cheque_no: paymentData.chequeNo || "",
-      paid_amount: paymentData.paidAmount || "0.00",
-    };
-    console.log("Updating payment ID:", editingPayment, updatedData);
+  const handleUpdatePayment = async () => {
+    if (!editingPayment) return;
 
-    // TODO: API call to update payment here
+    const payload = buildPaymentPayload();
+    if (!payload) return;
 
-    handleResetPaymentForm();
+    try {
+      await AxiosInstance.put(`/sale-payments/${editingPayment}/`, payload);
+      toast.success("Payment updated successfully.");
+
+      await fetchSales();
+      setEditingPayment(null);
+      setPayModalSale(null);
+      handleResetPaymentForm();
+      payModalRef.current?.close();
+    } catch (error) {
+      console.error("Error updating payment:", error);
+      console.log("Server says:", error.response?.data);
+      toast.error("Failed to update payment.");
+    }
   };
-
-  
 
   // Pagination
   const totalPages = Math.ceil(sales.length / itemsPerPage);
@@ -875,241 +942,347 @@ export default function SalesList() {
   );
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="min-h-screen bg-slate-100 p-4 md:p-6">
+      {/* Page Header */}
+      <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-slate-800">Sales</h1>
+          <p className="text-xs md:text-sm text-slate-500">
+            Manage your invoices, payments and product returns.
+          </p>
+        </div>
+        <div className="text-xs md:text-sm text-slate-500">
+          Total Invoices:{" "}
+          <span className="font-semibold text-slate-700">
+            {allSales.length}
+          </span>
+        </div>
+      </div>
+
       {/* Filters */}
-      <div className="grid grid-cols-1 max-w-3xl md:grid-cols-3 gap-3">
-        <div>
-          <label className="block text-sm font-medium mb-1">Customer</label>
-          <Select
-            options={customers}
-            isClearable
-            onChange={handleCustomerChange}
-            placeholder="Select Customer"
-            className="text-sm"
-            styles={customSelectStyles}
-          />
+      <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-slate-700">
+            Filter Invoices
+          </h2>
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">District</label>
-          <Select
-            options={districts}
-            isClearable
-            onChange={handleDistrictChange}
-            placeholder="Select District"
-            className="text-sm"
-            styles={customSelectStyles}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Bill No</label>
-          <input
-            type="text"
-            value={filters.billNo}
-            onChange={handleBillNoChange}
-            className="w-full border  px-3 py-1 rounded text-sm "
-            placeholder="Enter Bill No"
-          />
+        <div className="grid gap-3 md:grid-cols-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600">
+              Customer
+            </label>
+            <Select
+              options={customers}
+              isClearable
+              onChange={handleCustomerChange}
+              placeholder="Select customer"
+              className="text-sm"
+              styles={customSelectStyles}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600">
+              District
+            </label>
+            <Select
+              options={districts}
+              isClearable
+              onChange={handleDistrictChange}
+              placeholder="Select district"
+              className="text-sm"
+              styles={customSelectStyles}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600">
+              Bill No
+            </label>
+            <input
+              type="text"
+              value={filters.billNo}
+              onChange={handleBillNoChange}
+              className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-sm outline-none ring-0 focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+              placeholder="Search by bill no"
+            />
+          </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-box border border-base-content/5 bg-base-100">
-        <table className="table text-sm">
-          <thead className="bg-sky-800 text-white">
-            <tr>
-              <th className="w-10"></th>
-              <th className="max-w-[200px]">Customer Details</th>
-              <th>Bill No</th>
-              <th>Bill Date</th>
-              <th className="text-center">Total</th>
-              <th className="text-center">Discount</th>
-              <th className="text-center">Payable</th>
-              <th className="text-center">Paid</th>
-              <th className="text-center">Due</th>
-              <th className="text-center">Invoice</th>
-              <th className="text-center">Pay Due</th>
-              <th className="text-center">Return</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedSales.length === 0 ? (
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-100 px-4 py-2 text-xs text-slate-500">
+          {loading
+            ? "Loading invoices..."
+            : `Showing ${paginatedSales.length} of ${sales.length} invoices`}
+        </div>
+        <div className="overflow-x-auto">
+          <table className="table table-zebra-zebra text-xs md:text-sm">
+            <thead className="bg-slate-800 text-xs uppercase tracking-wide text-white">
               <tr>
-                <td colSpan={12} className="text-center py-6 text-gray-500">
-                  {loading ? "Loading..." : "No sales found"}
-                </td>
+                <th className="w-10 text-center"></th>
+                <th className="w-[220px]">Customer Details</th>
+                <th className="w-[120px] text-center">Bill No</th>
+                <th className="w-[110px] text-center">Bill Date</th>
+                <th className="w-[80px] text-center">Total</th>
+                <th className="w-[80px] text-center">Discount</th>
+                <th className="w-[80px] text-center">Payable</th>
+                <th className="w-[80px] text-center">Paid</th>
+                <th className="w-[80px] text-center">Due</th>
+                <th className="w-[70px] text-center">Invoice</th>
+                <th className="w-[80px] text-center">Pay Due</th>
+                <th className="w-[80px] text-center">Return</th>
               </tr>
-            ) : (
-              paginatedSales.map((sale) => {
-                const isExpanded = expandedRows.has(sale.id);
-                const paidAmount =
-                  sale.payments?.reduce(
-                    (acc, p) => acc + parseFloat(p.paid_amount || 0),
-                    0
-                  ) || 0;
-                const dueAmount =
-                  parseFloat(sale.total_payable_amount || 0) - paidAmount;
+            </thead>
+            <tbody>
+              {paginatedSales.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={12}
+                    className="py-10 text-center text-sm text-slate-500"
+                  >
+                    {loading ? "Loading..." : "No invoices found."}
+                  </td>
+                </tr>
+              ) : (
+                paginatedSales.map((sale) => {
+                  const isExpanded = expandedRows.has(sale.id);
+                  const paidAmount =
+                    sale.payments?.reduce(
+                      (acc, p) => acc + parseFloat(p.paid_amount || 0),
+                      0
+                    ) || 0;
+                  const dueAmount =
+                    parseFloat(sale.total_payable_amount || 0) - paidAmount;
 
-                return (
-                  <React.Fragment key={sale.id}>
-                    <tr className="hover:bg-gray-50">
-                      <td
-                        className="text-center cursor-pointer select-none"
-                        onClick={() => toggleRow(sale.id)}
-                      >
-                        {isExpanded ? (
-                          <span className="inline-block w-5 h-5 bg-gray-300 rounded-full flex items-center justify-center font-bold text-xs">
-                            −
-                          </span>
-                        ) : (
-                          <span className="inline-block w-5 h-5 bg-gray-300 rounded-full flex items-center justify-center font-bold text-xs">
-                            +
-                          </span>
-                        )}
-                      </td>
-                      <td className="max-w-[250px]">
-                        <div className="font-medium">
-                          {sale.customer?.customer_name || "N/A"}
-                        </div>
-                        <div className="text-xs text-gray-600">
-                          Contact: {sale.customer?.phone1 || "N/A"}
-                        </div>
-                        <div className="text-xs text-gray-600 truncate">
-                          Address:{" "}
-                          {sale.customer?.address?.replace(/\r\n/g, ", ") ||
-                            "N/A"}
-                        </div>
-                        <div className="text-xs text-gray-600">
-                          District: {sale.customer?.district || "N/A"}
-                        </div>
-                      </td>
-                      <td>{sale.invoice_no}</td>
-                      <td>{sale.sale_date}</td>
-                      <td className="text-center">
-                        {parseFloat(sale.total_amount || 0).toFixed(2)}
-                      </td>
-                      <td className="text-center">
-                        {parseFloat(sale.discount_amount || 0).toFixed(2)}
-                      </td>
-                      <td className="text-center">
-                        {parseFloat(sale.total_payable_amount || 0).toFixed(2)}
-                      </td>
-                      <td className="text-center">{paidAmount.toFixed(2)}</td>
-                      <td className="text-center">{dueAmount.toFixed(2)}</td>
-                      <td className="text-center">
-                        <button
-                          onClick={() => handleGenerateSalePdf(sale)}
-                          className="text-blue-600 hover:underline text-sm"
+                  return (
+                    <React.Fragment key={sale.id}>
+                      <tr className="hover:bg-gray-50">
+                        <td
+                          className="w-10 text-center cursor-pointer select-none"
+                          onClick={() => toggleRow(sale.id)}
                         >
-                          Invoice
-                        </button>
-                      </td>
-                      <td className="text-center">
-                        <button
-                          onClick={() => {
-                            setPayModalSale(sale);
-                            handleResetPaymentForm();
-                          }}
-                          className="text-blue-600 hover:underline text-sm"
-                        >
-                          Pay
-                        </button>
-                      </td>
-                      <td className="text-center">
-                        <button
-                          className="btn btn-md rounded-lg bg-red-500 text-sm text-white"
-                          onClick={() => handleOpenReturnModal(sale)}
-                        >
-                          Return
-                        </button>
-                      </td>
-                    </tr>
+                          {isExpanded ? (
+                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-700">
+                              −
+                            </span>
+                          ) : (
+                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-700">
+                              +
+                            </span>
+                          )}
+                        </td>
 
-                    {isExpanded && (
-                      <tr className="bg-gray-50">
-                        <td colSpan={12} className="p-0">
-                          <div className="flex justify-start">
-                            <div className="overflow-x-auto rounded-box border border-base-content/5 bg-base-100 w-full max-w-6xl">
-                              <table className="table text-sm">
-                                <thead className="bg-sky-700 h-5 text-white">
-                                  <tr>
-                                    <th className="text-center">Item</th>
-                                    <th className="text-center">Quantity</th>
-                                    <th className="text-center">Price</th>
-                                    <th className="text-center">Percentage</th>
-                                    <th className="text-center">
-                                      Price with %
-                                    </th>
-                                    <th className="text-center">Total</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {sale.products?.length > 0 ? (
-                                    sale.products.map((prod) => (
-                                      <tr key={prod.id} className="bg-white">
-                                        <td className="truncate">
-                                          {prod.product?.category_detail
-                                            ?.category_name || ""}{" "}
-                                          ({prod.part_no || ""})
-                                        </td>
-                                        <td className="text-center">
-                                          {parseFloat(
-                                            prod.sale_quantity || 0
-                                          ).toFixed(2)}
-                                        </td>
-                                        <td className="text-center">
-                                          {parseFloat(
-                                            prod.sale_price || 0
-                                          ).toFixed(2)}
-                                        </td>
-                                        <td className="text-center">
-                                          {parseFloat(
-                                            prod.percentage || 0
-                                          ).toFixed(2)}
-                                          %
-                                        </td>
-                                        <td className="text-center">
-                                          {parseFloat(
-                                            prod.sale_price_with_percentage || 0
-                                          ).toFixed(2)}
-                                        </td>
-                                        <td className="text-center">
-                                          {parseFloat(
-                                            prod.total_price || 0
-                                          ).toFixed(2)}
-                                        </td>
-                                      </tr>
-                                    ))
-                                  ) : (
-                                    <tr>
-                                      <td
-                                        colSpan={6}
-                                        className="text-center py-2 text-gray-500"
-                                      >
-                                        No products found
-                                      </td>
-                                    </tr>
-                                  )}
-                                </tbody>
-                              </table>
-                            </div>
+                        <td className="w-[220px] max-w-[260px]">
+                          <div className="font-medium text-slate-800">
+                            {sale.customer?.customer_name || "N/A"}
+                          </div>
+                          <div className="text-[11px] text-slate-500">
+                            Contact: {sale.customer?.phone1 || "N/A"}
+                          </div>
+                          <div className="truncate text-[11px] text-slate-500">
+                            Address:{" "}
+                            {sale.customer?.address?.replace(/\r\n/g, ", ") ||
+                              "N/A"}
+                          </div>
+                          <div className="text-[11px] text-slate-500">
+                            District: {sale.customer?.district || "N/A"}
                           </div>
                         </td>
+
+                        <td className="w-[120px] text-center align-middle">
+                          {sale.invoice_no}
+                        </td>
+
+                        <td className="w-[110px] text-center align-middle">
+                          {sale.sale_date}
+                        </td>
+
+                        <td className="w-[80px] text-center align-middle">
+                          {parseFloat(sale.total_amount || 0).toFixed(2)}
+                        </td>
+
+                        <td className="w-[80px] text-center align-middle">
+                          {parseFloat(sale.discount_amount || 0).toFixed(2)}
+                        </td>
+
+                        <td className="w-[80px] text-center align-middle">
+                          {parseFloat(sale.total_payable_amount || 0).toFixed(
+                            2
+                          )}
+                        </td>
+
+                        <td className="w-[80px] text-center align-middle">
+                          {paidAmount.toFixed(2)}
+                        </td>
+
+                        <td
+                          className={`w-[80px] text-center align-middle font-medium ${
+                            dueAmount > 0
+                              ? "text-amber-700"
+                              : "text-emerald-700"
+                          }`}
+                        >
+                          {dueAmount.toFixed(2)}
+                        </td>
+
+                        <td className="w-[70px] text-center align-middle">
+                          <button
+                            onClick={() => handleGenerateSalePdf(sale)}
+                            className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-200"
+                          >
+                            Invoice
+                          </button>
+                        </td>
+
+                        <td className="w-[80px] text-center align-middle">
+                          <button
+                            onClick={() => {
+                              setPayModalSale(sale);
+                            }}
+                            className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800 hover:bg-emerald-200"
+                          >
+                            Pay
+                          </button>
+                        </td>
+
+                        <td className="w-[80px] text-center align-middle">
+                          <button
+                            className="inline-flex items-center rounded-full bg-rose-500 px-3 py-1 text-xs font-medium text-white hover:bg-rose-600"
+                            onClick={() => handleOpenReturnModal(sale)}
+                          >
+                            Return
+                          </button>
+                        </td>
                       </tr>
-                    )}
-                  </React.Fragment>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+
+                      {isExpanded && (
+                        <tr className="bg-slate-50">
+                          <td colSpan={12} className="p-0">
+                            <div className="border-t border-slate-200 bg-slate-50 px-4 py-3">
+                              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                Products for invoice {sale.invoice_no}
+                              </div>
+                              <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+                                <table className="table text-xs md:text-sm">
+                                  <thead className="bg-slate-700 text-white">
+                                    <tr>
+                                      <th className="text-center">Item</th>
+                                      <th className="text-center">Quantity</th>
+                                      <th className="text-center">Price</th>
+                                      <th className="text-center">
+                                        Percentage
+                                      </th>
+                                      <th className="text-center">
+                                        Price with %
+                                      </th>
+                                      <th className="text-center">Total</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {sale.products?.length > 0 ? (
+                                      sale.products.map((prod) => (
+                                        <tr key={prod.id}>
+                                          <td className="truncate">
+                                            {prod.product?.category_detail
+                                              ?.category_name ||
+                                              prod.product?.product_name ||
+                                              ""}
+                                          </td>
+                                          <td className="text-center">
+                                            {parseFloat(
+                                              prod.sale_quantity || 0
+                                            ).toFixed(2)}
+                                          </td>
+                                          <td className="text-center">
+                                            {parseFloat(
+                                              prod.sale_price || 0
+                                            ).toFixed(2)}
+                                          </td>
+                                          <td className="text-center">
+                                            {parseFloat(
+                                              prod.percentage || 0
+                                            ).toFixed(2)}
+                                            %
+                                          </td>
+                                          <td className="text-center">
+                                            {parseFloat(
+                                              prod.sale_price_with_percentage ||
+                                                0
+                                            ).toFixed(2)}
+                                          </td>
+                                          <td className="text-center">
+                                            {parseFloat(
+                                              prod.total_price || 0
+                                            ).toFixed(2)}
+                                          </td>
+                                        </tr>
+                                      ))
+                                    ) : (
+                                      <tr>
+                                        <td
+                                          colSpan={6}
+                                          className="py-2 text-center text-slate-500"
+                                        >
+                                          No products found
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-center gap-1 text-xs">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            disabled={currentPage === 1}
+            className="rounded-full border border-slate-300 px-3 py-1 text-xs text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Previous
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`rounded-full border px-3 py-1 text-xs ${
+                currentPage === i + 1
+                  ? "border-slate-800 bg-slate-800 text-white"
+                  : "border-slate-300 text-slate-700 hover:bg-slate-100"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="rounded-full border border-slate-300 px-3 py-1 text-xs text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
 
       {/* Payment Modal */}
       {payModalSale && (
-        <dialog id="pay_modal" className="modal modal-open">
-          <div className="modal-box max-w-4xl relative">
+        <dialog ref={payModalRef} id="pay_modal" className="modal">
+          <div className="modal-box relative max-w-5xl bg-white">
             <button
               onClick={() => {
+                payModalRef.current?.close();
                 setPayModalSale(null);
                 handleResetPaymentForm();
               }}
@@ -1118,15 +1291,64 @@ export default function SalesList() {
               ✕
             </button>
 
-            <h3 className="font-bold text-lg mb-4">
-              Payment Details for Invoice: {payModalSale.invoice_no}
-            </h3>
+            <div className="mb-4 border-b border-slate-200 pb-2">
+              <h3 className="text-lg font-semibold text-slate-800">
+                Payment for Invoice {payModalSale.invoice_no}
+              </h3>
+              <p className="text-xs text-slate-500">
+                Customer: {payModalSale.customer?.customer_name || "N/A"}
+              </p>
+            </div>
 
-            <div className="mb-4">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-                {/* Payment Mode */}
+            <div className="mb-4 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+              <div className="grid gap-2 md:grid-cols-4">
                 <div>
-                  <label className="block text-sm mb-1 font-medium">
+                  <span className="font-semibold text-slate-700">
+                    Total Payable:
+                  </span>{" "}
+                  {parseFloat(
+                    payModalSale.total_payable_amount || 0
+                  ).toFixed(2)}
+                </div>
+                <div>
+                  <span className="font-semibold text-slate-700">
+                    Total Paid:
+                  </span>{" "}
+                  {(
+                    payModalSale.payments?.reduce(
+                      (acc, p) => acc + parseFloat(p.paid_amount || 0),
+                      0
+                    ) || 0
+                  ).toFixed(2)}
+                </div>
+                <div>
+                  <span className="font-semibold text-slate-700">
+                    Due Amount:
+                  </span>{" "}
+                  {(
+                    parseFloat(payModalSale.total_payable_amount || 0) -
+                    (payModalSale.payments?.reduce(
+                      (acc, p) => acc + parseFloat(p.paid_amount || 0),
+                      0
+                    ) || 0)
+                  ).toFixed(2)}
+                </div>
+                <div>
+                  <span className="font-semibold text-slate-700">
+                    Invoice Date:
+                  </span>{" "}
+                  {payModalSale.sale_date || "N/A"}
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <h4 className="mb-3 text-sm font-semibold text-slate-700">
+                Add / Update Payment
+              </h4>
+              <div className="grid gap-3 text-xs md:grid-cols-5">
+                <div>
+                  <label className="mb-1 block font-medium text-slate-600">
                     Payment Mode*
                   </label>
                   <Select
@@ -1142,15 +1364,14 @@ export default function SalesList() {
                     onChange={(selected) =>
                       handlePaymentChange("paymentMode", selected?.value || "")
                     }
-                    placeholder="Select"
+                    placeholder="Select mode"
                     className="text-sm"
-                   styles={customSelectStyles}
+                    styles={customSelectStyles}
                   />
                 </div>
 
-                {/* Bank Name */}
                 <div>
-                  <label className="block text-sm mb-1 font-medium">
+                  <label className="mb-1 block font-medium text-slate-600">
                     Bank Name
                   </label>
                   <Select
@@ -1165,17 +1386,16 @@ export default function SalesList() {
                     onChange={(selected) =>
                       handlePaymentChange("bankName", selected?.value || "")
                     }
-                    placeholder="Select"
+                    placeholder="Select bank"
                     isClearable
                     isDisabled={!isBank}
                     className="text-sm"
-                        styles={customSelectStyles}
+                    styles={customSelectStyles}
                   />
                 </div>
 
-                {/* Account No */}
                 <div>
-                  <label className="block text-sm mb-1 font-medium">
+                  <label className="mb-1 block font-medium text-slate-600">
                     Account No
                   </label>
                   <input
@@ -1185,16 +1405,15 @@ export default function SalesList() {
                       handlePaymentChange("accountNo", e.target.value)
                     }
                     disabled={!isBank}
-                    className={`w-full border text-sm px-2 py-1 rounded ${
-                      !isBank ? "bg-gray-100 text-gray-500" : ""
+                    className={`w-full rounded-md border px-2 py-1 text-xs outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 ${
+                      !isBank ? "bg-slate-100 text-slate-400" : ""
                     }`}
-                    placeholder="Account No"
+                    placeholder="Account number"
                   />
                 </div>
 
-                {/* Cheque No */}
                 <div>
-                  <label className="block text-sm mb-1 font-medium">
+                  <label className="mb-1 block font-medium text-slate-600">
                     Cheque No
                   </label>
                   <input
@@ -1204,16 +1423,15 @@ export default function SalesList() {
                       handlePaymentChange("chequeNo", e.target.value)
                     }
                     disabled={!isCheque}
-                    className={`w-full border px-2 py-1 text-sm rounded ${
-                      !isCheque ? "bg-gray-100 text-gray-400" : ""
+                    className={`w-full rounded-md border px-2 py-1 text-xs outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 ${
+                      !isCheque ? "bg-slate-100 text-slate-400" : ""
                     }`}
-                    placeholder="Cheque No"
+                    placeholder="Cheque number"
                   />
                 </div>
 
-                {/* Paid Amount */}
                 <div>
-                  <label className="block text-sm mb-1 font-medium">
+                  <label className="mb-1 block font-medium text-slate-600">
                     Paid Amount*
                   </label>
                   <input
@@ -1222,17 +1440,17 @@ export default function SalesList() {
                     onChange={(e) =>
                       handlePaymentChange("paidAmount", e.target.value)
                     }
-                    className="w-full border rounded px-2 py-1 text-sm placeholder-gray-400"
+                    className="w-full rounded-md border border-slate-300 px-2 py-1 text-xs outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
                     placeholder="0.00"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-center gap-5 mt-5">
+              <div className="mt-4 flex justify-center gap-3">
                 <button
                   type="button"
                   onClick={handleResetPaymentForm}
-                  className="px-4 py-2 border text-sm rounded hover:bg-gray-100"
+                  className="rounded-full border border-slate-300 px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
                 >
                   Reset
                 </button>
@@ -1241,26 +1459,25 @@ export default function SalesList() {
                   <button
                     type="button"
                     onClick={handleUpdatePayment}
-                    className="px-4 py-2 bg-green-700 text-sm text-white rounded hover:bg-green-600"
+                    className="rounded-full bg-emerald-700 px-4 py-1.5 text-xs font-medium text-white hover:bg-emerald-600"
                   >
-                    Update
+                    Update Payment
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={handleSavePayment}
-                    className="px-4 py-2 bg-sky-800 text-sm text-white rounded hover:bg-sky-700"
+                    className="rounded-full bg-slate-800 px-4 py-1.5 text-xs font-medium text-white hover:bg-slate-700"
                   >
-                    Save
+                    Save Payment
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Existing payment table */}
-            <div className="overflow-x-auto rounded-box border border-base-content/5 mt-8 bg-base-100">
-              <table className="table text-sm">
-                <thead className="bg-sky-800 text-white">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+              <table className="table text-xs md:text-sm">
+                <thead className="bg-slate-800 text-white">
                   <tr>
                     <th className="text-center">SL</th>
                     <th className="text-center">Due Date</th>
@@ -1282,7 +1499,9 @@ export default function SalesList() {
                         <td className="text-center">
                           {payment.due_date || "N/A"}
                         </td>
-                        <td>{getPaymentModeName(payment.payment_mode)}</td>
+                        <td className="text-center">
+                          {getPaymentModeName(payment.payment_mode)}
+                        </td>
                         <td className="text-center">
                           {getBankName(payment.bank_name)}
                         </td>
@@ -1296,17 +1515,19 @@ export default function SalesList() {
                           {parseFloat(payment.paid_amount || 0).toFixed(2)}
                         </td>
                         <td className="text-center">
-                          {payment.created_at?.slice(0, 10) || "N/A"}
+                          {payment.payment_date
+                            ? payment.payment_date.slice(0, 10)
+                            : "N/A"}
                         </td>
                         <td className="text-center">
                           {payment.due_invoice || "N/A"}
                         </td>
                         <td className="text-center">
                           <button
-                            className="text-blue-600 hover:underline"
+                            className="text-xs font-medium text-slate-700 underline hover:text-slate-900"
                             onClick={() => handleEditClick(payment)}
                           >
-                            EDIT
+                            Edit
                           </button>
                         </td>
                       </tr>
@@ -1315,7 +1536,7 @@ export default function SalesList() {
                     <tr>
                       <td
                         colSpan={10}
-                        className="text-center py-4 text-gray-500"
+                        className="py-4 text-center text-sm text-slate-500"
                       >
                         No payments found.
                       </td>
@@ -1327,7 +1548,15 @@ export default function SalesList() {
           </div>
 
           <form method="dialog" className="modal-backdrop">
-            <button onClick={() => setPayModalSale(null)}>close</button>
+            <button
+              onClick={() => {
+                payModalRef.current?.close();
+                setPayModalSale(null);
+                handleResetPaymentForm();
+              }}
+            >
+              close
+            </button>
           </form>
         </dialog>
       )}
@@ -1335,7 +1564,7 @@ export default function SalesList() {
       {/* Return Modal */}
       <dialog ref={returnModalRef} className="modal">
         {returnModalSale && (
-          <div className="modal-box bg-white rounded-lg shadow-lg max-w-4xl w-full p-4">
+          <div className="modal-box max-w-5xl rounded-xl bg-white p-4 shadow-lg">
             <form method="dialog">
               <button
                 type="button"
@@ -1363,31 +1592,38 @@ export default function SalesList() {
               </button>
             </form>
 
-            <h3 className="font-bold text-lg mb-4">
-              Add Product Return for Invoice: {returnModalSale.invoice_no}
-            </h3>
+            <div className="mb-4 border-b border-slate-200 pb-2">
+              <h3 className="text-lg font-semibold text-slate-800">
+                Product Return - Invoice {returnModalSale.invoice_no}
+              </h3>
+              <p className="text-xs text-slate-500">
+                Customer: {returnModalSale.customer?.customer_name || "N/A"}
+              </p>
+            </div>
 
             <form
               onSubmit={handleSubmit}
-              className="space-y-3 text-sm grid gap-2 grid-cols-5"
+              className="grid gap-3 text-xs md:text-sm md:grid-cols-5"
             >
               <div>
-                <label className="block font-medium mb-1">Return Date:</label>
+                <label className="mb-1 block font-medium text-slate-600">
+                  Return Date
+                </label>
                 <input
                   type="date"
                   name="returnDate"
                   value={formData.returnDate}
                   onChange={handleChange}
-                  className="w-full border rounded px-2 py-1"
+                  className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
                   required
                 />
               </div>
 
-              {/* Product Selection */}
               <div className="col-span-1">
-                <label className="block font-medium mb-1">Product Name:</label>
+                <label className="mb-1 block font-medium text-slate-600">
+                  Product Name
+                </label>
 
-                {/* For single product, show as read-only input */}
                 {returnModalSale.products.length === 1 ? (
                   <input
                     type="text"
@@ -1395,13 +1631,13 @@ export default function SalesList() {
                       returnModalSale.products[0]?.product?.product_name || ""
                     }
                     readOnly
-                    className="w-full border rounded px-2 py-1 bg-gray-100"
+                    className="w-full rounded-md border border-slate-300 bg-slate-100 px-2 py-1 text-sm"
                   />
                 ) : (
                   <select
                     name="selectedProductIndex"
                     value={formData.selectedProductIndex}
-                    className="w-full border rounded px-2 py-1"
+                    className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
                     onChange={handleProductSelectChange}
                     required
                   >
@@ -1415,7 +1651,9 @@ export default function SalesList() {
               </div>
 
               <div>
-                <label className="block font-medium mb-1">Sale Quantity:</label>
+                <label className="mb-1 block font-medium text-slate-600">
+                  Sale Quantity
+                </label>
                 <input
                   type="number"
                   name="saleQty"
@@ -1426,24 +1664,28 @@ export default function SalesList() {
                       : "")
                   }
                   readOnly
-                  className="w-full border rounded px-2 py-1 bg-gray-100"
+                  className="w-full rounded-md border border-slate-300 bg-slate-100 px-2 py-1 text-sm"
                   required
                 />
               </div>
 
               <div>
-                <label className="block font-medium mb-1">Current Stock:</label>
+                <label className="mb-1 block font-medium text-slate-600">
+                  Current Stock
+                </label>
                 <input
                   type="number"
                   name="currentQty"
                   value={formData.currentQty || ""}
                   readOnly
-                  className="w-full border rounded px-2 py-1 bg-gray-100"
+                  className="w-full rounded-md border border-slate-300 bg-slate-100 px-2 py-1 text-sm"
                 />
               </div>
 
               <div>
-                <label className="block font-medium mb-1">Price:</label>
+                <label className="mb-1 block font-medium text-slate-600">
+                  Price
+                </label>
                 <input
                   type="number"
                   name="price"
@@ -1455,13 +1697,15 @@ export default function SalesList() {
                       : "")
                   }
                   readOnly
-                  className="w-full border rounded px-2 py-1 bg-gray-100"
+                  className="w-full rounded-md border border-slate-300 bg-slate-100 px-2 py-1 text-sm"
                   required
                 />
               </div>
 
               <div>
-                <label className="block font-medium mb-1">Due Amount:</label>
+                <label className="mb-1 block font-medium text-slate-600">
+                  Due Amount
+                </label>
                 <input
                   type="number"
                   name="dueAmount"
@@ -1474,70 +1718,72 @@ export default function SalesList() {
                     ) || 0)
                   ).toFixed(2)}
                   readOnly
-                  className="w-full border rounded px-2 py-1 bg-gray-100"
+                  className="w-full rounded-md border border-slate-300 bg-slate-100 px-2 py-1 text-sm"
                 />
               </div>
 
               <div>
-                <label className="block font-medium mb-1">
-                  Already Return Quantity:
+                <label className="mb-1 block font-medium text-slate-600">
+                  Already Returned Qty
                 </label>
                 <input
                   type="number"
                   name="alreadyReturnQty"
                   value={formData.alreadyReturnQty || ""}
                   readOnly
-                  className="w-full border rounded px-2 py-1 bg-gray-100"
+                  className="w-full rounded-md border border-slate-300 bg-slate-100 px-2 py-1 text-sm"
                 />
               </div>
 
               <div>
-                <label className="block font-medium mb-1">
-                  Return Quantity:*
+                <label className="mb-1 block font-medium text-slate-600">
+                  Return Quantity*
                 </label>
                 <input
                   type="number"
                   name="returnQty"
                   value={formData.returnQty}
                   onChange={handleReturnQtyChange}
-                  className="w-full border rounded px-2 py-1"
+                  className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
                   required
                 />
                 {errors.returnQty && (
-                  <p className="text-red-500 text-xs">{errors.returnQty}</p>
+                  <p className="mt-1 text-xs text-rose-500">
+                    {errors.returnQty}
+                  </p>
                 )}
               </div>
 
               <div>
-                <label className="block font-medium mb-1">
-                  Return Amount:*
+                <label className="mb-1 block font-medium text-slate-600">
+                  Return Amount*
                 </label>
                 <input
                   type="text"
                   name="returnAmount"
                   value={formData.returnAmount}
                   readOnly
-                  className="w-full border rounded px-2 py-1 bg-gray-100"
+                  className="w-full rounded-md border border-slate-300 bg-slate-100 px-2 py-1 text-sm"
                   required
                 />
               </div>
 
-              <div className="">
-                <label className="block font-medium mb-1">
-                  Return Remarks:
+              <div className="md:col-span-2">
+                <label className="mb-1 block font-medium text-slate-600">
+                  Return Remarks
                 </label>
                 <input
                   name="returnRemarks"
                   value={formData.returnRemarks}
                   onChange={handleChange}
-                  className="w-full border rounded px-2 py-1"
+                  className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
                 />
               </div>
 
-              <div className="col-span-5 flex justify-center space-x-2 pt-3">
+              <div className="col-span-5 mt-2 flex justify-center gap-3 pt-3">
                 <button
                   type="reset"
-                  className="px-4 py-2 border rounded hover:bg-gray-100"
+                  className="rounded-full border border-slate-300 px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
                   onClick={() => {
                     const selectedProduct =
                       returnModalSale.products[formData.selectedProductIndex];
@@ -1582,33 +1828,26 @@ export default function SalesList() {
                 </button>
                 <button
                   type="submit"
-                  className="bg-sky-800 text-white px-4 py-2 rounded hover:bg-sky-700"
+                  className="rounded-full bg-slate-800 px-5 py-1.5 text-xs font-medium text-white hover:bg-slate-700"
                 >
-                  Save
+                  Save Return
                 </button>
               </div>
             </form>
 
-            <div className="mt-2">
-              {/* <h4 className="font-semibold text-md mb-3">
-                Previous Returns for This Sale
-              </h4> */}
-
-              <div className="overflow-x-auto">
-                {/* Check if there's any return data matching this sale */}
+            <div className="mt-4">
+              <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
                 {returnData?.some((item) =>
                   returnModalSale?.products?.some(
                     (product) => product.id === item.sale_product?.id
                   )
                 ) ? (
-                  // Show table if matching returns exist
-                  <table className="table table-zebra text-sm w-full">
-                    <thead className="bg-sky-800 text-sm text-white">
+                  <table className="table table-zebra text-xs md:text-sm">
+                    <thead className="bg-slate-800 text-xs text-white">
                       <tr>
                         <th className="text-center">SL</th>
                         <th className="text-center">Return Date</th>
                         <th className="text-center">Product Name</th>
-                        <th className="text-center">Part No</th>
                         <th className="text-center">Company</th>
                         <th className="text-center">Sold Qty</th>
                         <th className="text-center">Returned Qty</th>
@@ -1640,9 +1879,6 @@ export default function SalesList() {
                                 "N/A"}
                             </td>
                             <td className="text-center">
-                              {item.sale_product?.part_no || "N/A"}
-                            </td>
-                            <td className="text-center">
                               {item.sale_product?.product?.category_detail
                                 ?.company_detail?.company_name || "N/A"}
                             </td>
@@ -1663,7 +1899,9 @@ export default function SalesList() {
                     </tbody>
                   </table>
                 ) : (
-                  <div className="text-center  text-gray-500"></div>
+                  <div className="py-4 text-center text-sm text-slate-500">
+                    No returns for this invoice yet.
+                  </div>
                 )}
               </div>
             </div>
@@ -1673,37 +1911,6 @@ export default function SalesList() {
           <button>close</button>
         </form>
       </dialog>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center mt-4 space-x-2">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            disabled={currentPage === 1}
-            className="px-3 py-1 border rounded"
-          >
-            Previous
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentPage(i + 1)}
-              className={`px-3 py-1 border rounded ${
-                currentPage === i + 1 ? "bg-blue-600 text-white" : ""
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-            disabled={currentPage === totalPages}
-            className="px-3 py-1 border rounded"
-          >
-            Next
-          </button>
-        </div>
-      )}
     </div>
   );
 }

@@ -1335,7 +1335,7 @@ export default function CustomerProductSale() {
         />
       </div>
 
-      {/* Submitdddd */}
+      {/* Submitttt */}
       <div className="flex justify-center mt-4">
         <button
           onClick={handleSubmit}
