@@ -24,30 +24,13 @@ class SaleProductSerializer(serializers.ModelSerializer):
             'id',
             'product',
             'product_id',
-            'part_no',
+            'product_code',           # ✅ instead of part_no
             'sale_quantity',
             'sale_price',
             'percentage',
             'sale_price_with_percentage',
             'total_price',
         ]
-
-    def validate(self, data):
-        sale_quantity = data.get('sale_quantity')
-        product = data.get('product')
-        part_no = data.get('part_no')
-
-        stock = StockProduct.objects.filter(product=product, part_no=part_no).first()
-
-        if not stock:
-          raise serializers.ValidationError(f"No stock record found for {product} ({part_no}).")
-
-        if stock.current_stock_quantity < sale_quantity:
-            raise serializers.ValidationError(
-                f"Insufficient stock! Only {stock.current_stock_quantity} available."
-            )
-        
-        return data
 
        
 

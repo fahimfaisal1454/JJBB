@@ -51,7 +51,7 @@ INSTALLED_APPS = [
 
     'authentication',
     'people',
-    'sales',
+    'sales.apps.SalesConfig',
     
     
     'purchase.apps.PurchaseConfig',

@@ -33,7 +33,6 @@ class Sale(models.Model):
 class SaleProduct(models.Model):
     sale = models.ForeignKey(Sale, related_name='products', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    # Use product_code instead of part_no
     product_code = models.CharField(max_length=100)
 
     sale_quantity = models.PositiveIntegerField()
@@ -48,11 +47,10 @@ class SaleProduct(models.Model):
         super().save(*args, **kwargs)
 
         if is_new:
-            # Adjust this lookup to match your StockProduct fields
             stock = StockProduct.objects.filter(
-                product=self.product,
-                product_code=self.product_code
+                product=self.product          # ✅ no product_code here
             ).first()
+
             if stock:
                 stock.sale_quantity += self.sale_quantity
                 stock.current_stock_quantity = max(

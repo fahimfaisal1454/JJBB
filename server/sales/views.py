@@ -1,14 +1,14 @@
-from django.shortcuts import render
-from rest_framework import viewsets, status
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+
 from .models import Sale, SaleReturn, SaleProduct, SalePayment
 from .serializers import SaleSerializer, SaleReturnSerializer, SalePaymentSerializer
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from product.models import StockProduct
-from django.utils.dateparse import parse_date
-from django.db.models import Sum
 
+# ✅ correct app name
+from stocks.models import StockProduct
+from django.db.models import Sum
 
 
 class SaleViewSet(viewsets.ModelViewSet):
@@ -16,8 +16,6 @@ class SaleViewSet(viewsets.ModelViewSet):
     serializer_class = SaleSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
-   
-    
     @action(detail=True, methods=['get'])
     def payments(self, request, pk=None):
         sale = self.get_object()
@@ -26,23 +24,20 @@ class SaleViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-
 class SalePaymentViewSet(viewsets.ModelViewSet):
     queryset = SalePayment.objects.all().order_by('-payment_date')
     serializer_class = SalePaymentSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        qs = super().get_queryset()
         sale_id = self.request.query_params.get('sale_id')
         if sale_id:
-            queryset = queryset.filter(sale_id=sale_id)
-        return queryset
+            qs = qs.filter(sale_id=sale_id)
+        return qs
 
     def perform_create(self, serializer):
-        """Create a new payment and associate it with the sale"""
         serializer.save()
-
 
 
 class SaleReturnViewSet(viewsets.ModelViewSet):
@@ -51,23 +46,34 @@ class SaleReturnViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        qs = super().get_queryset()
         invoice_no = self.request.query_params.get('invoice_no')
         if invoice_no:
-            queryset = queryset.filter(sale_product__sale__invoice_no=invoice_no)
-        return queryset
+            qs = qs.filter(sale_product__sale__invoice_no=invoice_no)
+        return qs
 
     def perform_create(self, serializer):
-        instance = serializer.save()
-        sale_product = instance.sale_product
-        sale_product.returned_quantity += instance.quantity
-        sale_product.save()
-        
-        stock = StockProduct.objects.filter(
-            company_name=sale_product.sale.company_name,
-            part_no=sale_product.part_no,
-            product=sale_product.product
-        ).first()
+        """
+        When a sale return is created:
+        - increment returned_quantity on the SaleProduct
+        - add the returned qty back to stock.current_stock_quantity
+        - (optionally) reduce stock.sale_quantity
+        """
+        instance: SaleReturn = serializer.save()
+
+        sp: SaleProduct = instance.sale_product
+        sp.returned_quantity = (sp.returned_quantity or 0) + instance.quantity
+        sp.save(update_fields=['returned_quantity'])
+
+        # ✅ StockProduct tracks by product FK
+        stock = StockProduct.objects.filter(product=sp.product).first()
         if stock:
-            stock.current_stock_quantity += instance.quantity
+            stock.current_stock_quantity = (stock.current_stock_quantity or 0) + instance.quantity
+            # optional: reflect that some sold units were returned
+            if hasattr(stock, 'sale_quantity') and stock.sale_quantity is not None:
+                stock.sale_quantity = max(0, stock.sale_quantity - instance.quantity)
+            # keep value in sync if you store it
+            if hasattr(stock, 'current_stock_value'):
+                purchase_price = float(stock.purchase_price or 0)
+                stock.current_stock_value = (stock.current_stock_quantity or 0) * purchase_price
             stock.save()
