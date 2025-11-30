@@ -12,22 +12,27 @@ const menuConfig = [
     icon: "💰",
     items: [
       // { label: "Estimates", path: "/sales/estimates" },
-      { label: "Invoices", path: "/sales/invoices" },
+      { label: "Customers", path: "/sales/customers" },
+      
+      { label: "Products & Services", path: "/sales/products-services" },
       // { label: "Recurring Invoices", path: "/sales/recurring-invoices" },
       // { label: "Checkouts", path: "/sales/checkouts" },
       { label: "Payments", path: "/sales/payments" },
+      { label: "Invoices", path: "/sales/invoices" },
       { label: "Customer Statements", path: "/sales/customer-statements" },
-      { label: "Customers", path: "/sales/customers" },
-      { label: "Products & Services", path: "/sales/products-services" },
+      
+      
     ],
   },
   {
     title: "Purchases",
     icon: "🧾",
     items: [
-      { label: "Bills", path: "/purchases/bills" },
+      
       { label: "Vendors", path: "/purchases/vendors" },
       { label: "Products & Services", path: "/purchases/products-services" },
+      { label: "Invoice", path: "/purchases/invoices" },
+      { label: "Bills", path: "/purchases/bills" },
     ],
   },
   {
