@@ -163,6 +163,7 @@ export default function SalesList() {
 
   const itemsPerPage = 5;
   const returnModalRef = useRef(null);
+  const payModalRef = useRef(null);
 
   // Data fetching functions
   const fetchSales = async () => {
@@ -341,7 +342,7 @@ export default function SalesList() {
   };
 
   const handleProductSelectChange = (e) => {
-    const selectedIndex = parseInt(e.target.value);
+    const selectedIndex = parseInt(e.target.value, 10);
     const selectedProduct = returnModalSale.products[selectedIndex];
 
     const matchedStock = stockData.find(
@@ -349,9 +350,7 @@ export default function SalesList() {
     );
 
     const alreadyReturnedQty = returnData
-      .filter(
-        (returnItem) => returnItem.sale_product?.id === selectedProduct.id
-      )
+      .filter((returnItem) => returnItem.sale_product?.id === selectedProduct.id)
       .reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0);
 
     setFormData((prev) => ({
@@ -393,7 +392,7 @@ export default function SalesList() {
 
     try {
       await AxiosInstance.post("/sale-returns/", {
-        sale_product_id: saleProductId,
+        sale_product: saleProductId,
         quantity: finalReturnQty,
         return_date: formData.returnDate,
         remarks: formData.returnRemarks,
@@ -434,7 +433,9 @@ export default function SalesList() {
     const totalAmount = parseFloat(sale.total_amount || 0);
     const discount = parseFloat(sale.discount_amount || 0);
     const grossTotal = totalAmount - discount;
-    const previousBalance = parseFloat(sale.customer?.previous_due_amount || 0);
+    const previousBalance = parseFloat(
+      sale.customer?.previous_due_amount || 0
+    );
     const netAmount = grossTotal;
     const paidAmount =
       sale.payments?.reduce(
@@ -745,15 +746,56 @@ export default function SalesList() {
     fetchPaymentModes();
   }, []);
 
-  const getBankName = (bankId) => {
+  // Open Pay dialog when payModalSale is set
+  useEffect(() => {
+    if (payModalSale && payModalRef.current) {
+      // reset form & default paid amount to current due
+      setEditingPayment(null);
+      setIsBank(false);
+      setIsCheque(false);
+
+      const totalPaid =
+        payModalSale.payments?.reduce(
+          (acc, p) => acc + parseFloat(p.paid_amount || 0),
+          0
+        ) || 0;
+      const due =
+        parseFloat(payModalSale.total_payable_amount || 0) - totalPaid;
+
+      setPaymentData({
+        paymentMode: "",
+        bankName: "",
+        accountNo: "",
+        chequeNo: "",
+        paidAmount: due > 0 ? due.toFixed(2) : "",
+      });
+
+      payModalRef.current.showModal();
+    }
+  }, [payModalSale]);
+
+  const getBankName = (bank) => {
+    if (!bank) return "N/A";
+
+    const bankId =
+      typeof bank === "object" && bank !== null ? bank.id : Number(bank);
     if (!bankId) return "N/A";
-    const bank = banks.find((b) => b.value === Number(bankId));
-    return bank?.label || "N/A";
+
+    const option = banks.find((b) => b.value === bankId);
+    return option?.label || "N/A";
   };
 
-  const getPaymentModeName = (id) => {
-    const mode = paymentModes.find((pm) => pm.value === Number(id));
-    return mode?.label || "N/A";
+  const getPaymentModeName = (value) => {
+    if (!value) return "N/A";
+
+    // If backend stored plain string like "Cash", "Bank", etc.
+    if (typeof value === "string" && isNaN(Number(value))) {
+      return value;
+    }
+
+    const numericId = Number(value);
+    const mode = paymentModes.find((pm) => pm.value === numericId);
+    return mode?.label || String(value);
   };
 
   const handlePaymentChange = (field, value) => {
@@ -788,58 +830,108 @@ export default function SalesList() {
     setIsCheque(false);
   };
 
-  const handleSavePayment = () => {
-    const newPaymentData = {
-      payment_mode: paymentData.paymentMode || "",
-      bank_name: paymentData.bankName || "",
+  const buildPaymentPayload = () => {
+    if (!payModalSale) return null;
+
+    const paid = parseFloat(paymentData.paidAmount || 0);
+    if (!paid || paid <= 0) {
+      toast.error("Enter a valid paid amount.");
+      return null;
+    }
+
+    const totalPaid =
+      payModalSale.payments?.reduce(
+        (acc, p) => acc + parseFloat(p.paid_amount || 0),
+        0
+      ) || 0;
+    const due =
+      parseFloat(payModalSale.total_payable_amount || 0) - totalPaid;
+
+    if (paid > due) {
+      toast.error("Paid amount cannot be greater than due.");
+      return null;
+    }
+
+    const selectedMode = paymentModes.find(
+      (opt) => opt.value === Number(paymentData.paymentMode)
+    );
+    const paymentModeLabel = selectedMode?.label || "";
+
+    // 🔥 NOTE: sale_id key to match serializer
+    return {
+      sale_id: payModalSale.id,
+      payment_mode: paymentModeLabel,
+      bank_name_id: paymentData.bankName || null,
       account_no: paymentData.accountNo || "",
       cheque_no: paymentData.chequeNo || "",
-      paid_amount: paymentData.paidAmount || "0.00",
+      paid_amount: paid.toFixed(2),
+      remarks: "",
     };
-    console.log("Saving payment:", newPaymentData);
+  };
 
-    // TODO: API call to save payment
+  const handleSavePayment = async () => {
+    const payload = buildPaymentPayload();
+    if (!payload) return;
 
-    handleResetPaymentForm();
+    try {
+      await AxiosInstance.post("/sale-payments/", payload);
+      toast.success("Payment saved successfully.");
+
+      await fetchSales();
+      setPayModalSale(null);
+      handleResetPaymentForm();
+      payModalRef.current?.close();
+    } catch (error) {
+      console.error("Error saving payment:", error);
+      console.log("Server says:", error.response?.data);
+      toast.error("Failed to save payment.");
+    }
   };
 
   const handleEditClick = (payment) => {
+    // Map payment_mode string (e.g. "Cash") to option value
+    const modeOption = paymentModes.find(
+      (opt) =>
+        String(opt.label).toLowerCase() ===
+        String(payment.payment_mode || "").toLowerCase()
+    );
+
     const editData = {
-      paymentMode: payment.payment_mode ? Number(payment.payment_mode) : "",
-      bankName: payment.bank_name ? Number(payment.bank_name) : "",
+      paymentMode: modeOption?.value || "",
+      bankName: payment.bank_name?.id || "",
       accountNo: payment.account_no || "",
       chequeNo: payment.cheque_no || "",
       paidAmount: payment.paid_amount ? String(payment.paid_amount) : "",
     };
     setPaymentData(editData);
 
-    if (payment.payment_mode && paymentModes.length > 0) {
-      const selectedMode = paymentModes.find(
-        (opt) => opt.value === Number(payment.payment_mode)
-      );
-      const modeLabel = selectedMode ? selectedMode.label.toLowerCase() : "";
-      setIsBank(modeLabel === "bank");
-      setIsCheque(modeLabel === "cheque");
-    } else {
-      setIsBank(false);
-      setIsCheque(false);
-    }
+    const modeLabel = String(payment.payment_mode || "").toLowerCase();
+    setIsBank(modeLabel === "bank");
+    setIsCheque(modeLabel === "cheque");
+
     setEditingPayment(payment.id);
   };
 
-  const handleUpdatePayment = () => {
-    const updatedData = {
-      payment_mode: paymentData.paymentMode || "",
-      bank_name: paymentData.bankName || "",
-      account_no: paymentData.accountNo || "",
-      cheque_no: paymentData.chequeNo || "",
-      paid_amount: paymentData.paidAmount || "0.00",
-    };
-    console.log("Updating payment ID:", editingPayment, updatedData);
+  const handleUpdatePayment = async () => {
+    if (!editingPayment) return;
 
-    // TODO: API call to update payment
+    const payload = buildPaymentPayload();
+    if (!payload) return;
 
-    handleResetPaymentForm();
+    try {
+      await AxiosInstance.put(`/sale-payments/${editingPayment}/`, payload);
+      toast.success("Payment updated successfully.");
+
+      await fetchSales();
+      setEditingPayment(null);
+      setPayModalSale(null);
+      handleResetPaymentForm();
+      payModalRef.current?.close();
+    } catch (error) {
+      console.error("Error updating payment:", error);
+      console.log("Server says:", error.response?.data);
+      toast.error("Failed to update payment.");
+    }
   };
 
   // Pagination
@@ -1046,7 +1138,6 @@ export default function SalesList() {
                           <button
                             onClick={() => {
                               setPayModalSale(sale);
-                              handleResetPaymentForm();
                             }}
                             className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800 hover:bg-emerald-200"
                           >
@@ -1093,8 +1184,9 @@ export default function SalesList() {
                                         <tr key={prod.id}>
                                           <td className="truncate">
                                             {prod.product?.category_detail
-                                              ?.category_name || ""}{" "}
-                                            ({prod.part_no || ""})
+                                              ?.category_name ||
+                                              prod.product?.product_name ||
+                                              ""}
                                           </td>
                                           <td className="text-center">
                                             {parseFloat(
@@ -1186,10 +1278,11 @@ export default function SalesList() {
 
       {/* Payment Modal */}
       {payModalSale && (
-        <dialog id="pay_modal" className="modal modal-open">
+        <dialog ref={payModalRef} id="pay_modal" className="modal">
           <div className="modal-box relative max-w-5xl bg-white">
             <button
               onClick={() => {
+                payModalRef.current?.close();
                 setPayModalSale(null);
                 handleResetPaymentForm();
               }}
@@ -1213,9 +1306,9 @@ export default function SalesList() {
                   <span className="font-semibold text-slate-700">
                     Total Payable:
                   </span>{" "}
-                  {parseFloat(payModalSale.total_payable_amount || 0).toFixed(
-                    2
-                  )}
+                  {parseFloat(
+                    payModalSale.total_payable_amount || 0
+                  ).toFixed(2)}
                 </div>
                 <div>
                   <span className="font-semibold text-slate-700">
@@ -1422,7 +1515,9 @@ export default function SalesList() {
                           {parseFloat(payment.paid_amount || 0).toFixed(2)}
                         </td>
                         <td className="text-center">
-                          {payment.created_at?.slice(0, 10) || "N/A"}
+                          {payment.payment_date
+                            ? payment.payment_date.slice(0, 10)
+                            : "N/A"}
                         </td>
                         <td className="text-center">
                           {payment.due_invoice || "N/A"}
@@ -1453,7 +1548,15 @@ export default function SalesList() {
           </div>
 
           <form method="dialog" className="modal-backdrop">
-            <button onClick={() => setPayModalSale(null)}>close</button>
+            <button
+              onClick={() => {
+                payModalRef.current?.close();
+                setPayModalSale(null);
+                handleResetPaymentForm();
+              }}
+            >
+              close
+            </button>
           </form>
         </dialog>
       )}
@@ -1745,7 +1848,6 @@ export default function SalesList() {
                         <th className="text-center">SL</th>
                         <th className="text-center">Return Date</th>
                         <th className="text-center">Product Name</th>
-                        <th className="text-center">Part No</th>
                         <th className="text-center">Company</th>
                         <th className="text-center">Sold Qty</th>
                         <th className="text-center">Returned Qty</th>
@@ -1775,9 +1877,6 @@ export default function SalesList() {
                             <td className="text-center">
                               {item.sale_product?.product?.product_name ||
                                 "N/A"}
-                            </td>
-                            <td className="text-center">
-                              {item.sale_product?.part_no || "N/A"}
                             </td>
                             <td className="text-center">
                               {item.sale_product?.product?.category_detail
