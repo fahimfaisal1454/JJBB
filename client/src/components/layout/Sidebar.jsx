@@ -32,6 +32,7 @@ const menuConfig = [
       { label: "Vendors", path: "/purchases/vendors" },
       { label: "Products & Services", path: "/purchases/products-services" },
       { label: "Invoice", path: "/purchases/invoices" },
+      { label: "Payments", path: "/purchases/payments" },
       { label: "Bills", path: "/purchases/bills" },
     ],
   },
