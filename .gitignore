@@ -18,3 +18,6 @@ client/node_modules/
 
 # OS files
 .DS_Store
+
+__pycache__/
+*.pyc
