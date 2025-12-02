@@ -4,11 +4,21 @@ import AxiosInstance from "../../../components/AxiosInstance";
 import toast from "react-hot-toast";
 import DamageModal from "./DamageModal";
 
+// 🔹 NEW: Recharts imports for expired-products chart
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
 export default function Stocks() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedStock, setSelectedStock] = useState(null);
- 
+
   // Fetch stocks from API
   useEffect(() => {
     const fetchStocks = async () => {
@@ -17,6 +27,7 @@ export default function Stocks() {
         setItems(res.data);
       } catch (err) {
         console.error("Failed to fetch stocks:", err);
+        toast.error("Failed to load inventory");
       } finally {
         setLoading(false);
       }
@@ -24,24 +35,74 @@ export default function Stocks() {
     fetchStocks();
   }, []);
 
-
   const updateItem = (updatedStock) => {
     setItems((prev) =>
       prev.map((i) => (i.id === updatedStock.id ? updatedStock : i))
     );
   };
 
+  // Small helpers for date logic
+  const today = new Date();
+  const parseDate = (d) => (d ? new Date(d) : null);
+
+  const isExpired = (item) => {
+    const exp = parseDate(item.expiry_date);
+    return exp && exp < today;
+  };
+
+  const isExpiringSoon = (item) => {
+    const exp = parseDate(item.expiry_date);
+    if (!exp) return false;
+    const diffMs = exp - today;
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    return diffDays > 0 && diffDays <= 2; // next 2 days
+  };
 
   // KPI calculations
-  const totalOnHand = items.reduce((sum, i) => sum + i.current_stock_quantity, 0);
-  const lowStockCount = items.filter((i) => i.current_stock_quantity <= i.reorder_level).length;
-  const fastMovingCount = items.filter((i) => i.moving_speed === "Fast-moving").length;
-  const damagedCount = items.reduce((sum, i) => sum + i.damage_quantity, 0);
+  const totalOnHand = items.reduce(
+    (sum, i) => sum + (i.current_stock_quantity || 0),
+    0
+  );
+  const lowStockCount = items.filter(
+    (i) => i.current_stock_quantity <= i.reorder_level
+  ).length;
+  const fastMovingCount = items.filter(
+    (i) => i.moving_speed === "Fast-moving"
+  ).length;
+  const damagedCount = items.reduce(
+    (sum, i) => sum + (i.damage_quantity || 0),
+    0
+  );
+
+  // NEW: total units currently in stock that are already expired
+  const expiredUnits = items
+    .filter((i) => isExpired(i))
+    .reduce((sum, i) => sum + (i.current_stock_quantity || 0), 0);
+
+  // 🔹 Data for expired products chart
+  const expiredChartData = items
+    .filter((i) => isExpired(i) && (i.current_stock_quantity || 0) > 0)
+    .map((i) => ({
+      name: i.product?.product_name || "Unknown",
+      expiredQty: i.current_stock_quantity || 0,
+    }));
 
   const stockStatusClass = (item) => {
-    if (item.current_stock_quantity <= item.reorder_level) return "bg-red-100 text-red-700";
-    if (item.moving_speed === "Fast-moving") return "bg-green-100 text-green-700";
+    if (isExpired(item)) return "bg-red-100 text-red-700";
+    if (item.current_stock_quantity <= item.reorder_level)
+      return "bg-red-100 text-red-700";
+    if (item.moving_speed === "Fast-moving")
+      return "bg-green-100 text-green-700";
+    if (isExpiringSoon(item)) return "bg-amber-100 text-amber-700";
     return "bg-yellow-100 text-yellow-700";
+  };
+
+  const stockStatusLabel = (item) => {
+    if (isExpired(item)) return "Expired";
+    if (item.current_stock_quantity <= item.reorder_level) return "Low Stock";
+    if (isExpiringSoon(item)) return "Expiring Soon";
+    if (item.moving_speed === "Fast-moving") return "Fast-moving";
+    return "Healthy";
   };
 
   if (loading) return <p>Loading inventory...</p>;
@@ -53,15 +114,15 @@ export default function Stocks() {
         <div>
           <h1 className="text-xl font-semibold">Inventory Management</h1>
           <p className="text-sm text-slate-500 max-w-2xl">
-            Maintain optimal inventory levels with real-time tracking of purchases, sales, and stock
-            movement. Reduce carrying costs, prevent stock-outs, and make informed decisions with
-            demand forecasting.
+            Maintain optimal inventory levels with real-time tracking of
+            purchases, sales, stock movement, and food safety dates. Reduce
+            waste, prevent stock-outs, and ensure expired items are not served.
           </p>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           title="Total Units On Hand"
           value={totalOnHand}
@@ -85,7 +146,37 @@ export default function Stocks() {
           description="Recorded damaged or written-off items."
           tone="bad"
         />
+        {/* NEW: Expired units KPI */}
+        <StatCard
+          title="Expired Units On Hand"
+          value={expiredUnits}
+          description="Units past expiry that should not be served."
+          tone={expiredUnits > 0 ? "bad" : "good"}
+        />
       </div>
+
+      {/* NEW: Expired products chart */}
+      {expiredChartData.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+          <h2 className="text-sm font-semibold mb-2">
+            Expired Products (by current stock quantity)
+          </h2>
+          <p className="text-xs text-slate-500 mb-3">
+            Shows products whose expiry date has passed but still have units in
+            stock.
+          </p>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={expiredChartData}>
+                <XAxis dataKey="name" fontSize={10} />
+                <YAxis fontSize={10} />
+                <Tooltip />
+                <Bar dataKey="expiredQty" name="Expired Qty" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {/* Inventory Table */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
@@ -101,6 +192,7 @@ export default function Stocks() {
               <option>Fast-moving</option>
               <option>Low stock</option>
               <option>Slow moving</option>
+              <option>Expired</option>
             </select>
           </div>
         </div>
@@ -114,6 +206,9 @@ export default function Stocks() {
               <th className="py-2 px-2 text-right">Sale Qty</th>
               <th className="py-2 px-2 text-right">On Hand</th>
               <th className="py-2 px-2 text-right">Damage Qty</th>
+              {/* NEW: manufacture & expiry columns */}
+              <th className="py-2 px-2">Mfg Date</th>
+              <th className="py-2 px-2">Expiry Date</th>
               <th className="py-2 px-2">Status</th>
               <th className="py-2 px-2">Add Damage</th>
               <th className="py-2 px-2 text-right">Actions</th>
@@ -122,15 +217,38 @@ export default function Stocks() {
           <tbody>
             {items.map((item) => (
               <tr key={item.id} className="border-b last:border-0">
-                <td className="py-2 px-2 font-medium">{item.product.product_name}</td>
-                <td className="py-2 px-2 text-xs font-mono">{item.product.product_code}</td>
-                <td className="py-2 px-2 text-right">{item.purchase_quantity}</td>
-                <td className="py-2 px-2 text-right">{item.sale_quantity}</td>
-                <td className="py-2 px-2 text-right">{item.current_stock_quantity}</td>
-                <td className="py-2 px-2 text-right">{item.damage_quantity}</td>
+                <td className="py-2 px-2 font-medium">
+                  {item.product.product_name}
+                </td>
+                <td className="py-2 px-2 text-xs font-mono">
+                  {item.product.product_code}
+                </td>
+                <td className="py-2 px-2 text-right">
+                  {item.purchase_quantity}
+                </td>
+                <td className="py-2 px-2 text-right">
+                  {item.sale_quantity}
+                </td>
+                <td className="py-2 px-2 text-right">
+                  {item.current_stock_quantity}
+                </td>
+                <td className="py-2 px-2 text-right">
+                  {item.damage_quantity}
+                </td>
+                {/* NEW: show dates */}
                 <td className="py-2 px-2">
-                  <span className={`px-2 py-1 text-xs rounded-full ${stockStatusClass(item)}`}>
-                    {item.current_stock_quantity <= 10 ? "Low Stock" : "Healthy"}
+                  {item.manufacture_date || "-"}
+                </td>
+                <td className="py-2 px-2">
+                  {item.expiry_date || "-"}
+                </td>
+                <td className="py-2 px-2">
+                  <span
+                    className={`px-2 py-1 text-xs rounded-full ${stockStatusClass(
+                      item
+                    )}`}
+                  >
+                    {stockStatusLabel(item)}
                   </span>
                 </td>
                 <td
@@ -158,7 +276,6 @@ export default function Stocks() {
           onUpdated={updateItem}
         />
       )}
-
     </div>
   );
 }
@@ -173,7 +290,9 @@ function StatCard({ title, value, description, tone = "neutral" }) {
   };
   return (
     <div className={`rounded-xl border shadow-sm p-4 ${toneClasses[tone]}`}>
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{title}</div>
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        {title}
+      </div>
       <div className="mt-2 text-2xl font-bold">{value}</div>
       <div className="mt-1 text-xs text-slate-500">{description}</div>
     </div>
@@ -185,7 +304,9 @@ function FeatureCard({ title, points }) {
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
       <h2 className="text-sm font-semibold mb-2">{title}</h2>
       <ul className="text-xs text-slate-600 space-y-1 list-disc list-inside">
-        {points.map((p) => <li key={p}>{p}</li>)}
+        {points.map((p) => (
+          <li key={p}>{p}</li>
+        ))}
       </ul>
     </div>
   );
