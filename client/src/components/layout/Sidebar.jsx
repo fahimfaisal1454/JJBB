@@ -13,22 +13,19 @@ const menuConfig = [
     items: [
       // { label: "Estimates", path: "/sales/estimates" },
       { label: "Customers", path: "/sales/customers" },
-      
+
       { label: "Products & Services", path: "/sales/products-services" },
       // { label: "Recurring Invoices", path: "/sales/recurring-invoices" },
       // { label: "Checkouts", path: "/sales/checkouts" },
       { label: "Payments", path: "/sales/payments" },
       { label: "Invoices", path: "/sales/invoices" },
       { label: "Customer Statements", path: "/sales/customer-statements" },
-      
-      
     ],
   },
   {
     title: "Purchases",
     icon: "🧾",
     items: [
-      
       { label: "Vendors", path: "/purchases/vendors" },
       { label: "Products & Services", path: "/purchases/products-services" },
       { label: "Invoice", path: "/purchases/invoices" },
@@ -48,55 +45,56 @@ const menuConfig = [
       { label: "Transaction Locking", path: "/accounting/transaction-locking" },
       { label: "Petty Cash", path: "/accounting/petty-cash" },
       { label: "Cash Reconciliation", path: "/accounting/cash-reconciliation" },
-      { label: "Bank Reconciliation", path: "/accounting/bank-reconciliation" },  // ← add this
+      { label: "Bank Reconciliation", path: "/accounting/bank-reconciliation" },
     ],
   },
-{
-  title: "Stock",
-  icon: "📦",
-  items: [
-    { label: "Inventory", path: "/dashboard/stocks" },  // ← add this
-    { label: "Products", path: "/dashboard/products" },
-  ],
-},
-{
-  title: "Expenses",
-  icon: "🧾",
-  items: [
-    { label: "Expenses", path: "/expenses" },
-    { label: "Salary Expense", path: "/expenses/salary" },  // ← add this
-  ],
-},
-{
-  title: "Assets",
-  icon: "🏢",
-  items: [
-    { label: "Assets", path: "/assets" },   
-  ],
-},
+  {
+    title: "Stock",
+    icon: "📦",
+    items: [
+      { label: "Inventory", path: "/dashboard/stocks" },
+      { label: "Products", path: "/dashboard/products" },
+    ],
+  },
+  {
+    title: "Expenses",
+    icon: (
+      <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-800/80 text-slate-100">
+        ৳
+      </span>
+    ),
+    basePath: "/expenses",
+    items: [
+      { label: "General Expense", path: "/expenses" },
+      { label: "Salary Expense", path: "/expenses/salary" },
+      { label: "Purchase Expense", path: "/expenses/purchase" },
+    ],
+  },
+  {
+    title: "Assets",
+    icon: "🏢",
+    items: [{ label: "Assets", path: "/assets" }],
+  },
   {
     title: "Reports",
     icon: "📑",
     items: [{ label: "Reports Home", path: "/reports" }],
   },
-
   {
-  title: "Master",
-  icon: "",
-  items: [
-    { label: "Cost Category", path: "/master/cost-category" },
-    { label: "Income Sources", path: "/master/income-sources" },
-    { label: "Product Category", path: "/master/product-category" },
-    { label: "Payment Mode", path: "/master/payment-mode" },  // ← add this
-    { label: "Bank Cayegory", path: "/master/bank-category" },
-    { label: "Bank", path: "/master/bank" },
-    { label: "Divisions", path: "/master/divisions" },
-    { label: "Districts", path: "/master/districts" },
-    { label: "Supplier Type", path: "/master/supplier-type" },  // ← add this
-  ],
-},
-
-
+    title: "Master",
+    icon: "",
+    items: [
+      { label: "Cost Category", path: "/master/cost-category" },
+      { label: "Income Sources", path: "/master/income-sources" },
+      { label: "Product Category", path: "/master/product-category" },
+      { label: "Payment Mode", path: "/master/payment-mode" },
+      { label: "Bank Cayegory", path: "/master/bank-category" },
+      { label: "Bank", path: "/master/bank" },
+      { label: "Divisions", path: "/master/divisions" },
+      { label: "Districts", path: "/master/districts" },
+      { label: "Supplier Type", path: "/master/supplier-type" },
+    ],
+  },
   {
     title: "Staffs",
     icon: "",
@@ -132,12 +130,8 @@ export default function Sidebar() {
           b
         </div>
         <div>
-          <h1 className="text-lg font-semibold tracking-tight">
-            bBOOK
-          </h1>
-          <p className="text-[11px] text-slate-400">
-            Cloud Accounting
-          </p>
+          <h1 className="text-lg font-semibold tracking-tight">bBOOK</h1>
+          <p className="text-[11px] text-slate-400">Cloud Accounting</p>
         </div>
       </div>
 
@@ -146,8 +140,6 @@ export default function Sidebar() {
         {menuConfig.map((section) => {
           const isOpen = openSection === section.title;
           const hasSingleItem = section.items.length === 1;
-
-          // If only one item, clicking header will navigate directly
           const singleItemPath = hasSingleItem ? section.items[0].path : null;
 
           return (
@@ -191,18 +183,17 @@ export default function Sidebar() {
                   <div className="py-1 pb-2 px-1 space-y-0.5">
                     {section.items.map((item) => {
                       const isActive = location.pathname === item.path;
+
                       return (
                         <NavLink
                           key={item.path}
                           to={item.path}
-                          className={({ isActive: activeFromNav }) =>
-                            [
-                              "block px-3 py-1.5 rounded-lg text-xs flex items-center justify-between",
-                              (isActive || activeFromNav)
-                                ? "bg-blue-600 text-white shadow-sm"
-                                : "text-slate-300 hover:bg-slate-800/80",
-                            ].join(" ")
-                          }
+                          className={[
+                            "block px-3 py-1.5 rounded-lg text-xs flex items-center justify-between",
+                            isActive
+                              ? "bg-blue-600 text-white shadow-sm"
+                              : "text-slate-300 hover:bg-slate-800/80",
+                          ].join(" ")}
                         >
                           <span>{item.label}</span>
                         </NavLink>

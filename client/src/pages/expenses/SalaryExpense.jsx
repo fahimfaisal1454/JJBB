@@ -1,14 +1,21 @@
 // client/src/pages/expenses/SalaryExpense.jsx
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import AxiosInstance from "../../components/AxiosInstance";
 import { FaSearch, FaEdit, FaTrash } from "react-icons/fa";
 
 const EMPTY_FORM = {
   staff: "",
   salary_month: "",
-  amount: "",
+  base_amount: "",
+  allowance: "",
+  bonus: "",
   note: "",
+};
+
+const toNumber = (v) => {
+  const n = parseFloat(v);
+  return Number.isNaN(n) ? 0 : n;
 };
 
 export default function SalaryExpense() {
@@ -21,6 +28,19 @@ export default function SalaryExpense() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Filters for payroll sheet
+  const [filterStaff, setFilterStaff] = useState(""); // staff id
+  const [filterMonth, setFilterMonth] = useState(""); // "YYYY-MM"
+
+  // live total on the form
+  const formTotalSalary = useMemo(
+    () =>
+      toNumber(form.base_amount) +
+      toNumber(form.allowance) +
+      toNumber(form.bonus),
+    [form.base_amount, form.allowance, form.bonus]
+  );
 
   // ------------ API ------------
 
@@ -75,8 +95,8 @@ export default function SalaryExpense() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.staff || !form.salary_month || !form.amount) {
-      alert("Staff, month and amount are required.");
+    if (!form.staff || !form.salary_month || !form.base_amount) {
+      alert("Employee, month and basic amount are required.");
       return;
     }
 
@@ -86,7 +106,9 @@ export default function SalaryExpense() {
     const payload = {
       staff: form.staff,
       salary_month: form.salary_month, // "YYYY-MM"
-      amount: form.amount,
+      base_amount: form.base_amount, // basic
+      allowance: form.allowance || 0,
+      bonus: form.bonus || 0,
       note: form.note,
     };
 
@@ -111,13 +133,15 @@ export default function SalaryExpense() {
     setForm({
       staff: item.staff || "",
       salary_month: item.salary_month || "",
-      amount: item.amount || "",
+      base_amount: item.base_amount || "",
+      allowance: item.allowance || "",
+      bonus: item.bonus || "",
       note: item.note || "",
     });
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this salary expense?")) return;
+    if (!window.confirm("Delete this salary record?")) return;
     try {
       await AxiosInstance.delete(`salary-expenses/${id}/`);
       setItems((prev) => prev.filter((x) => x.id !== id));
@@ -125,6 +149,150 @@ export default function SalaryExpense() {
       console.error("Delete failed", e);
       setError("Failed to delete salary expense");
     }
+  };
+
+  // ------------ Payroll sheet filtering ------------
+
+  const filteredItems = useMemo(
+    () =>
+      items.filter((r) => {
+        if (filterStaff && String(r.staff) !== String(filterStaff)) {
+          return false;
+        }
+        if (filterMonth && r.salary_month !== filterMonth) {
+          return false;
+        }
+        return true;
+      }),
+    [items, filterStaff, filterMonth]
+  );
+
+  // ------------ Payroll summary (based on filtered items) ------------
+
+  const totalBasic = useMemo(
+    () => filteredItems.reduce((sum, r) => sum + toNumber(r.base_amount), 0),
+    [filteredItems]
+  );
+  const totalAllowance = useMemo(
+    () => filteredItems.reduce((sum, r) => sum + toNumber(r.allowance), 0),
+    [filteredItems]
+  );
+  const totalBonus = useMemo(
+    () => filteredItems.reduce((sum, r) => sum + toNumber(r.bonus), 0),
+    [filteredItems]
+  );
+  const totalSalary = useMemo(
+    () =>
+      filteredItems.reduce(
+        (sum, r) =>
+          sum +
+          (r.total_salary != null
+            ? toNumber(r.total_salary)
+            : toNumber(r.base_amount) +
+              toNumber(r.allowance) +
+              toNumber(r.bonus)),
+        0
+      ),
+    [filteredItems]
+  );
+
+  const formatMoney = (v) =>
+    `৳ ${toNumber(v).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
+  // ------------ Export / Print ------------
+
+  const escapeCsv = (value) => {
+    if (value == null) return "";
+    const stringValue = String(value);
+    if (stringValue.includes('"') || stringValue.includes(",") || stringValue.includes("\n")) {
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    }
+    return stringValue;
+  };
+
+  const handleExportCsv = () => {
+    const headers = [
+      "Employee",
+      "Month",
+      "Basic",
+      "Allowance",
+      "Bonus",
+      "Total Salary",
+      "Note",
+    ];
+
+    const rows = filteredItems.map((r) => {
+      const rowTotal =
+        r.total_salary != null
+          ? toNumber(r.total_salary)
+          : toNumber(r.base_amount) +
+            toNumber(r.allowance) +
+            toNumber(r.bonus);
+
+      return [
+        r.staff_name || `Staff #${r.staff}`,
+        r.salary_month,
+        toNumber(r.base_amount).toFixed(2),
+        toNumber(r.allowance).toFixed(2),
+        toNumber(r.bonus).toFixed(2),
+        rowTotal.toFixed(2),
+        r.note || "",
+      ];
+    });
+
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map(escapeCsv).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const monthPart = filterMonth || "all-months";
+    link.href = url;
+    link.setAttribute("download", `payroll_${monthPart}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handlePrint = () => {
+    const content = document.getElementById("payroll-sheet-print-area");
+    if (!content) return;
+
+    const printWindow = window.open("", "_blank");
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Payroll Sheet</title>
+          <style>
+            body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 16px; }
+            table { width: 100%; border-collapse: collapse; font-size: 12px; }
+            th, td { border: 1px solid #ccc; padding: 4px 6px; text-align: right; }
+            th:nth-child(1), td:nth-child(1),
+            th:nth-child(2), td:nth-child(2),
+            th:nth-child(7), td:nth-child(7),
+            th:nth-child(8), td:nth-child(8) { text-align: left; }
+            thead { background-color: #f3f4f6; }
+            tfoot { background-color: #111827; color: white; }
+            h2 { margin-bottom: 12px; }
+          </style>
+        </head>
+        <body>
+          <h2>Payroll Sheet</h2>
+          ${content.innerHTML}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
   };
 
   // ------------ UI ------------
@@ -135,10 +303,10 @@ export default function SalaryExpense() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-slate-800">
-            Salary Expenses
+            Salary Expenses / Payroll
           </h2>
           <p className="text-xs text-slate-500">
-            Record employee salary payments month by month.
+            Record monthly payroll with basic, allowance and bonus.
           </p>
         </div>
 
@@ -150,7 +318,7 @@ export default function SalaryExpense() {
               value={search}
               onChange={handleSearchChange}
               placeholder="Search by staff or month..."
-              className="w-full pl-9 pr-3 py-2 rounded-full border border-slate-200 text-sm focus:outline-none focus:ring focus:ring-blue-500/30"
+              className="w-full pl-9 pr-3 py-2 rounded-full border border-slate-200 text-sm focus:outline-none focus:ring focus:ring-blue-500/30 bg-white"
             />
           </div>
         </div>
@@ -166,10 +334,10 @@ export default function SalaryExpense() {
       {/* Form */}
       <form
         onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white border border-slate-200 rounded-xl p-4 items-end"
+        className="grid grid-cols-1 lg:grid-cols-5 gap-3 bg-white border border-slate-200 rounded-xl p-4 items-end shadow-sm"
       >
         {/* Staff */}
-        <div className="md:col-span-2">
+        <div className="lg:col-span-2">
           <label className="block text-xs font-semibold text-slate-700 mb-1">
             Employee *
           </label>
@@ -198,27 +366,70 @@ export default function SalaryExpense() {
             name="salary_month"
             value={form.salary_month}
             onChange={handleChange}
-            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring focus:ring-blue-500/30"
+            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring focus:ring-blue-500/30 bg-white"
           />
         </div>
 
-        {/* Amount */}
+        {/* Basic Amount */}
         <div>
           <label className="block text-xs font-semibold text-slate-700 mb-1">
-            Amount (৳) *
+            Basic Amount (৳) *
           </label>
           <input
             type="number"
-            name="amount"
+            name="base_amount"
             step="0.01"
-            value={form.amount}
+            value={form.base_amount}
             onChange={handleChange}
-            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring focus:ring-blue-500/30"
+            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring focus:ring-blue-500/30 bg-white"
           />
         </div>
 
+        {/* Allowance */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Allowance (৳)
+          </label>
+          <input
+            type="number"
+            name="allowance"
+            step="0.01"
+            value={form.allowance}
+            onChange={handleChange}
+            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring focus:ring-blue-500/30 bg-white"
+          />
+        </div>
+
+        {/* Bonus */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Bonus (৳)
+          </label>
+          <input
+            type="number"
+            name="bonus"
+            step="0.01"
+            value={form.bonus}
+            onChange={handleChange}
+            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring focus:ring-blue-500/30 bg-white"
+          />
+        </div>
+
+        {/* Total (read-only) */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Total Salary (৳)
+          </label>
+          <div className="w-full px-3 py-2 rounded-lg border border-slate-100 text-sm bg-slate-50 flex items-center justify-between">
+            <span className="text-slate-500 text-xs">Preview</span>
+            <span className="font-semibold">
+              {formatMoney(formTotalSalary)}
+            </span>
+          </div>
+        </div>
+
         {/* Note */}
-        <div className="md:col-span-3">
+        <div className="lg:col-span-3">
           <label className="block text-xs font-semibold text-slate-700 mb-1">
             Note
           </label>
@@ -226,13 +437,13 @@ export default function SalaryExpense() {
             name="note"
             value={form.note}
             onChange={handleChange}
-            placeholder="Bonus, overtime, deduction, etc."
-            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring focus:ring-blue-500/30"
+            placeholder="Bonus reason, overtime, deductions, etc."
+            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring focus:ring-blue-500/30 bg-white"
           />
         </div>
 
-        {/* Button */}
-        <div className="md:col-span-1 flex justify-end gap-2">
+        {/* Buttons */}
+        <div className="lg:col-span-2 flex justify-end gap-2">
           <button
             type="button"
             onClick={resetForm}
@@ -250,77 +461,226 @@ export default function SalaryExpense() {
                 ? "Updating..."
                 : "Saving..."
               : editingId
-              ? "Update Salary"
-              : "Save Salary"}
+              ? "Update Payroll"
+              : "Save Payroll"}
           </button>
         </div>
       </form>
 
-      {/* List */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-slate-800">
-            Salary Expense List
-          </h3>
-          <span className="text-[11px] text-slate-500">
-            {items.length} record{items.length !== 1 ? "s" : ""}
-          </span>
+      {/* Summary cards like payroll header */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+        <SummaryCard label="Total Basic" value={formatMoney(totalBasic)} />
+        <SummaryCard
+          label="Total Allowance"
+          value={formatMoney(totalAllowance)}
+        />
+        <SummaryCard label="Total Bonus" value={formatMoney(totalBonus)} />
+        <SummaryCard
+          label="Total Salary"
+          value={formatMoney(totalSalary)}
+          highlight
+        />
+      </div>
+
+      {/* Payroll Sheet */}
+      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-800">
+              Payroll Sheet
+            </h3>
+            <span className="text-[11px] text-slate-500">
+              {filteredItems.length} record
+              {filteredItems.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+
+          {/* Filters & Actions */}
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* Staff filter */}
+            <select
+              value={filterStaff}
+              onChange={(e) => setFilterStaff(e.target.value)}
+              className="px-2 py-1 text-xs rounded-full border border-slate-200 bg-white"
+            >
+              <option value="">All employees</option>
+              {staffs.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name || s.staff_name || `Staff #${s.id}`}
+                </option>
+              ))}
+            </select>
+
+            {/* Month filter */}
+            <input
+              type="month"
+              value={filterMonth}
+              onChange={(e) => setFilterMonth(e.target.value)}
+              className="px-2 py-1 text-xs rounded-full border border-slate-200 bg-white"
+            />
+
+            {/* Clear filters */}
+            <button
+              type="button"
+              onClick={() => {
+                setFilterStaff("");
+                setFilterMonth("");
+              }}
+              className="px-2 py-1 text-xs rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50"
+            >
+              Clear filter
+            </button>
+
+            {/* Export CSV */}
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="px-3 py-1 text-xs rounded-full border border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+            >
+              Export Excel (CSV)
+            </button>
+
+            {/* Print / PDF */}
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="px-3 py-1 text-xs rounded-full border border-indigo-600 text-indigo-700 hover:bg-indigo-50"
+            >
+              Print / PDF
+            </button>
+          </div>
         </div>
 
         {loading ? (
           <p className="text-xs text-slate-500">Loading...</p>
-        ) : items.length === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <p className="text-xs text-slate-500">
             No salary expenses recorded yet.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-xs">
+          <div
+            id="payroll-sheet-print-area"
+            className="overflow-x-auto"
+          >
+            <table className="min-w-full text-xs border border-slate-100">
               <thead>
-                <tr className="bg-slate-50 text-slate-500">
+                <tr className="bg-slate-50 text-slate-500 border-b">
                   <th className="py-2 px-2 text-left">Employee</th>
                   <th className="py-2 px-2 text-left">Month</th>
-                  <th className="py-2 px-2 text-right">Amount</th>
+                  <th className="py-2 px-2 text-right">Basic</th>
+                  <th className="py-2 px-2 text-right">Allowance</th>
+                  <th className="py-2 px-2 text-right">Bonus</th>
+                  <th className="py-2 px-2 text-right">Total Salary</th>
                   <th className="py-2 px-2 text-left">Note</th>
                   <th className="py-2 px-2 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((r) => (
-                  <tr key={r.id} className="border-t">
-                    <td className="py-2 px-2">
-                      {r.staff_name || `Staff #${r.staff}`}
-                    </td>
-                    <td className="py-2 px-2">{r.salary_month}</td>
-                    <td className="py-2 px-2 text-right">
-                      ৳ {Number(r.amount).toLocaleString()}
-                    </td>
-                    <td className="py-2 px-2">
-                      {r.note || <span className="text-slate-400">—</span>}
-                    </td>
-                    <td className="py-2 px-2 text-right space-x-2">
-                      <button
-                        onClick={() => handleEdit(r)}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-blue-500 text-blue-500 hover:bg-blue-50"
-                      >
-                        <FaEdit className="w-3 h-3" />
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(r.id)}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-red-500 text-red-500 hover:bg-red-50"
-                      >
-                        <FaTrash className="w-3 h-3" />
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {filteredItems.map((r, idx) => {
+                  const rowTotal =
+                    r.total_salary != null
+                      ? toNumber(r.total_salary)
+                      : toNumber(r.base_amount) +
+                        toNumber(r.allowance) +
+                        toNumber(r.bonus);
+
+                  return (
+                    <tr
+                      key={r.id}
+                      className={
+                        "border-t " +
+                        (idx % 2 === 0 ? "bg-white" : "bg-slate-50/40")
+                      }
+                    >
+                      <td className="py-2 px-2">
+                        {r.staff_name || `Staff #${r.staff}`}
+                      </td>
+                      <td className="py-2 px-2">{r.salary_month}</td>
+                      <td className="py-2 px-2 text-right">
+                        {formatMoney(r.base_amount)}
+                      </td>
+                      <td className="py-2 px-2 text-right">
+                        {formatMoney(r.allowance)}
+                      </td>
+                      <td className="py-2 px-2 text-right">
+                        {formatMoney(r.bonus)}
+                      </td>
+                      <td className="py-2 px-2 text-right font-semibold">
+                        {formatMoney(rowTotal)}
+                      </td>
+                      <td className="py-2 px-2 max-w-xs truncate">
+                        {r.note || <span className="text-slate-400">—</span>}
+                      </td>
+                      <td className="py-2 px-2 text-right space-x-2 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(r)}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-blue-500 text-blue-500 hover:bg-blue-50"
+                        >
+                          <FaEdit className="w-3 h-3" />
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(r.id)}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-red-500 text-red-500 hover:bg-red-50"
+                        >
+                          <FaTrash className="w-3 h-3" />
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
+              {/* footer total row for payroll sheet */}
+              <tfoot>
+                <tr className="border-t bg-slate-900 text-white">
+                  <td className="py-2 px-2 font-semibold" colSpan={2}>
+                    Total
+                  </td>
+                  <td className="py-2 px-2 text-right font-semibold">
+                    {formatMoney(totalBasic)}
+                  </td>
+                  <td className="py-2 px-2 text-right font-semibold">
+                    {formatMoney(totalAllowance)}
+                  </td>
+                  <td className="py-2 px-2 text-right font-semibold">
+                    {formatMoney(totalBonus)}
+                  </td>
+                  <td className="py-2 px-2 text-right font-semibold">
+                    {formatMoney(totalSalary)}
+                  </td>
+                  <td colSpan={2}></td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function SummaryCard({ label, value, highlight = false }) {
+  return (
+    <div
+      className={
+        "rounded-xl px-4 py-3 border text-xs flex flex-col gap-1 " +
+        (highlight
+          ? "bg-slate-900 text-white border-slate-900"
+          : "bg-white text-slate-800 border-slate-200")
+      }
+    >
+      <span
+        className={
+          "uppercase tracking-wide " +
+          (highlight ? "text-slate-300" : "text-slate-500")
+        }
+      >
+        {label}
+      </span>
+      <span className="text-base font-semibold">{value}</span>
     </div>
   );
 }
