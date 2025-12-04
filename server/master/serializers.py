@@ -78,3 +78,27 @@ class BankAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = BankAccount
         fields = '__all__'
+        
+        
+        
+# ----------------------------
+class BankTransactionSerializer(serializers.ModelSerializer):
+    bank_account_detail = BankAccountSerializer(
+        source="bank_account", read_only=True
+    )
+
+    class Meta:
+        model = BankTransaction
+        fields = [
+            "id",
+            "bank_account",
+            "bank_account_detail",
+            "date",
+            "transaction_type",
+            "amount",
+            "narration",
+            "reference_no",
+            "running_balance",
+            "created_at",
+        ]
+        read_only_fields = ["running_balance", "created_at"]

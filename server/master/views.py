@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, filters
 from .models import *
 from .serializers import *
 from rest_framework.permissions import AllowAny , IsAuthenticated # no need for IsAuthenticated here
@@ -75,3 +75,15 @@ class BankAccountViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     queryset = BankAccount.objects.all()
     serializer_class = BankAccountSerializer
+    
+    
+    
+
+class BankTransactionViewSet(viewsets.ModelViewSet):
+    queryset = BankTransaction.objects.all().order_by("-date", "-id")
+    serializer_class = BankTransactionSerializer
+    permission_classes = [IsAuthenticated]
+
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["narration", "reference_no", "bank_account__accountName"]
+    ordering_fields = ["date", "created_at", "amount"]

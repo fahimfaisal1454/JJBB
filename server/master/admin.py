@@ -14,3 +14,8 @@ admin.site.register(BankCategoryMaster)
 admin.site.register(BankMaster)
 admin.site.register(AccountCategory)
 admin.site.register(BankAccount)
+@admin.register(BankTransaction)
+class BankTransactionAdmin(admin.ModelAdmin):
+    list_display = ("id", "bank_account", "date", "transaction_type", "amount")
+    list_filter = ("transaction_type", "date", "bank_account")
+    search_fields = ("narration", "reference_no", "bank_account__accountName")
