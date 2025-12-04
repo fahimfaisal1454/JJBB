@@ -51,6 +51,10 @@ def update_stock_product(sender, instance, created, **kwargs):
     qty = int(instance.purchase_quantity)
     price = Decimal(instance.purchase_price)
 
+    # NEW: grab dates from the purchase line
+    mfg_date = instance.manufacture_date
+    exp_date = instance.expiry_date
+
     stock, created_stock = StockProduct.objects.get_or_create(
         product=product,
         business_category=business_category,
@@ -68,6 +72,7 @@ def update_stock_product(sender, instance, created, **kwargs):
     )
 
     if not created_stock:
+        # existing stock row -> update quantities and prices
         stock.purchase_quantity += qty
         stock.current_stock_quantity += qty
         stock.purchase_price = price
