@@ -4,7 +4,11 @@ import AxiosInstance from "../../../components/AxiosInstance";
 import toast from "react-hot-toast";
 import DamageModal from "./DamageModal";
 
+<<<<<<< HEAD
 // Recharts imports for expired-products chart
+=======
+// 🔹 NEW: Recharts imports for expired-products chart
+>>>>>>> ad7a823585188ac868be8cf5b6c896e9e2be0f4b
 import {
   BarChart,
   Bar,
@@ -19,9 +23,12 @@ export default function Stocks() {
   const [loading, setLoading] = useState(true);
   const [selectedStock, setSelectedStock] = useState(null);
 
+<<<<<<< HEAD
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
+=======
+>>>>>>> ad7a823585188ac868be8cf5b6c896e9e2be0f4b
   // Fetch stocks from API
   useEffect(() => {
     const fetchStocks = async () => {
@@ -44,6 +51,7 @@ export default function Stocks() {
     );
   };
 
+<<<<<<< HEAD
   // ---- Date helpers ----
   const today = new Date();
   const parseDate = (d) => (d ? new Date(d) : null);
@@ -63,6 +71,26 @@ export default function Stocks() {
   };
 
   // ---- KPI calculations ----
+=======
+  // Small helpers for date logic
+  const today = new Date();
+  const parseDate = (d) => (d ? new Date(d) : null);
+
+  const isExpired = (item) => {
+    const exp = parseDate(item.expiry_date);
+    return exp && exp < today;
+  };
+
+  const isExpiringSoon = (item) => {
+    const exp = parseDate(item.expiry_date);
+    if (!exp) return false;
+    const diffMs = exp - today;
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    return diffDays > 0 && diffDays <= 2; // next 2 days
+  };
+
+  // KPI calculations
+>>>>>>> ad7a823585188ac868be8cf5b6c896e9e2be0f4b
   const totalOnHand = items.reduce(
     (sum, i) => sum + (i.current_stock_quantity || 0),
     0
@@ -78,17 +106,25 @@ export default function Stocks() {
     0
   );
 
+<<<<<<< HEAD
   // Total units already expired
+=======
+  // NEW: total units currently in stock that are already expired
+>>>>>>> ad7a823585188ac868be8cf5b6c896e9e2be0f4b
   const expiredUnits = items
     .filter((i) => isExpired(i))
     .reduce((sum, i) => sum + (i.current_stock_quantity || 0), 0);
 
+<<<<<<< HEAD
   // 🔔 NEW: total units expiring in the next 2 days
   const expiringSoonUnits = items
     .filter((i) => isExpiringSoon(i))
     .reduce((sum, i) => sum + (i.current_stock_quantity || 0), 0);
 
   // Data for expired products chart
+=======
+  // 🔹 Data for expired products chart
+>>>>>>> ad7a823585188ac868be8cf5b6c896e9e2be0f4b
   const expiredChartData = items
     .filter((i) => isExpired(i) && (i.current_stock_quantity || 0) > 0)
     .map((i) => ({
@@ -109,11 +145,16 @@ export default function Stocks() {
   const stockStatusLabel = (item) => {
     if (isExpired(item)) return "Expired";
     if (item.current_stock_quantity <= item.reorder_level) return "Low Stock";
+<<<<<<< HEAD
     if (isExpiringSoon(item)) return "Expiring Soon"; // 2-day warning text
+=======
+    if (isExpiringSoon(item)) return "Expiring Soon";
+>>>>>>> ad7a823585188ac868be8cf5b6c896e9e2be0f4b
     if (item.moving_speed === "Fast-moving") return "Fast-moving";
     return "Healthy";
   };
 
+<<<<<<< HEAD
   // ---- Search + filter ----
   const filteredItems = items.filter((item) => {
     const term = searchTerm.toLowerCase().trim();
@@ -148,6 +189,8 @@ export default function Stocks() {
     return matchesSearch && matchesFilter;
   });
 
+=======
+>>>>>>> ad7a823585188ac868be8cf5b6c896e9e2be0f4b
   if (loading) return <p>Loading inventory...</p>;
 
   return (
@@ -165,7 +208,11 @@ export default function Stocks() {
       </div>
 
       {/* KPI Cards */}
+<<<<<<< HEAD
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+=======
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+>>>>>>> ad7a823585188ac868be8cf5b6c896e9e2be0f4b
         <StatCard
           title="Total Units On Hand"
           value={totalOnHand}
@@ -189,12 +236,17 @@ export default function Stocks() {
           description="Recorded damaged or written-off items."
           tone="bad"
         />
+<<<<<<< HEAD
+=======
+        {/* NEW: Expired units KPI */}
+>>>>>>> ad7a823585188ac868be8cf5b6c896e9e2be0f4b
         <StatCard
           title="Expired Units On Hand"
           value={expiredUnits}
           description="Units past expiry that should not be served."
           tone={expiredUnits > 0 ? "bad" : "good"}
         />
+<<<<<<< HEAD
         {/* 🔔 NEW: Expiring soon KPI */}
         <StatCard
           title="Expiring Soon (2 days)"
@@ -205,6 +257,11 @@ export default function Stocks() {
       </div>
 
       {/* Expired products chart */}
+=======
+      </div>
+
+      {/* NEW: Expired products chart */}
+>>>>>>> ad7a823585188ac868be8cf5b6c896e9e2be0f4b
       {expiredChartData.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
           <h2 className="text-sm font-semibold mb-2">
@@ -238,6 +295,7 @@ export default function Stocks() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+<<<<<<< HEAD
             <select
               className="text-sm border border-slate-200 rounded-lg px-3 py-1.5"
               value={statusFilter}
@@ -249,6 +307,14 @@ export default function Stocks() {
               <option value="Slow moving">Slow moving</option>
               <option value="Expired">Expired</option>
               <option value="Expiring soon">Expiring soon</option> {/* NEW */}
+=======
+            <select className="text-sm border border-slate-200 rounded-lg px-3 py-1.5">
+              <option>Filter: All</option>
+              <option>Fast-moving</option>
+              <option>Low stock</option>
+              <option>Slow moving</option>
+              <option>Expired</option>
+>>>>>>> ad7a823585188ac868be8cf5b6c896e9e2be0f4b
             </select>
           </div>
         </div>
@@ -262,6 +328,10 @@ export default function Stocks() {
               <th className="py-2 px-2 text-right">Sale Qty</th>
               <th className="py-2 px-2 text-right">On Hand</th>
               <th className="py-2 px-2 text-right">Damage Qty</th>
+<<<<<<< HEAD
+=======
+              {/* NEW: manufacture & expiry columns */}
+>>>>>>> ad7a823585188ac868be8cf5b6c896e9e2be0f4b
               <th className="py-2 px-2">Mfg Date</th>
               <th className="py-2 px-2">Expiry Date</th>
               <th className="py-2 px-2">Status</th>
@@ -284,10 +354,17 @@ export default function Stocks() {
             {filteredItems.map((item) => (
               <tr key={item.id} className="border-b last:border-0">
                 <td className="py-2 px-2 font-medium">
+<<<<<<< HEAD
                   {item.product?.product_name || "Unnamed"}
                 </td>
                 <td className="py-2 px-2 text-xs font-mono">
                   {item.product?.product_code || "-"}
+=======
+                  {item.product.product_name}
+                </td>
+                <td className="py-2 px-2 text-xs font-mono">
+                  {item.product.product_code}
+>>>>>>> ad7a823585188ac868be8cf5b6c896e9e2be0f4b
                 </td>
                 <td className="py-2 px-2 text-right">
                   {item.purchase_quantity}
@@ -301,6 +378,10 @@ export default function Stocks() {
                 <td className="py-2 px-2 text-right">
                   {item.damage_quantity}
                 </td>
+<<<<<<< HEAD
+=======
+                {/* NEW: show dates */}
+>>>>>>> ad7a823585188ac868be8cf5b6c896e9e2be0f4b
                 <td className="py-2 px-2">
                   {item.manufacture_date || "-"}
                 </td>
