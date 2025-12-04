@@ -5,11 +5,9 @@ const Home = () => {
     <main className="min-h-screen bg-orange-500 flex items-center justify-center px-4 py-10">
       {/* Main content container */}
       <div className="w-full max-w-6xl bg-white rounded-3xl shadow-2xl overflow-hidden">
-
         {/* HERO SECTION (No Navbar Above) */}
         <section className="relative px-6 sm:px-10 py-10 sm:py-14 md:py-16 bg-[#f4f0e7]">
           <div className="grid md:grid-cols-[1.1fr_1.3fr_0.8fr] gap-8 items-center">
-
             {/* Left big food image */}
             <div className="flex justify-center md:justify-start">
               <div className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-full overflow-hidden shadow-lg">
@@ -23,7 +21,7 @@ const Home = () => {
 
             {/* Center text */}
             <div className="text-center md:text-left">
-              <p className="uppercase text-xs tracking-[0.45em] text-gray-500 mb-3">
+              <p className="uppercase text-lg sm:text-xl font-extrabold tracking-[0.35em] text-gray-700 mb-3">
                 Joy Jatra Food Corner
               </p>
 
@@ -35,7 +33,8 @@ const Home = () => {
               </h1>
 
               <p className="text-gray-600 max-w-md mx-auto md:mx-0 mb-6 text-sm sm:text-base">
-                Fresh, plant-based meals crafted with organic ingredients and bursting with flavor.
+                Fresh, plant-based meals crafted with organic ingredients and
+                bursting with flavor.
               </p>
 
               <button className="inline-flex items-center gap-2 bg-gray-900 text-white px-7 py-3 rounded-full text-sm font-semibold shadow hover:bg-gray-800 transition">
@@ -45,7 +44,6 @@ const Home = () => {
 
             {/* Right image + discount badge */}
             <div className="flex flex-col items-center md:items-end gap-4 relative">
-
               {/* Discount badge */}
               <div className="absolute -top-4 right-4 md:static md:self-end">
                 <div className="w-20 h-20 rounded-full bg-orange-500 text-white flex flex-col items-center justify-center text-xs font-bold shadow-lg">
@@ -67,7 +65,6 @@ const Home = () => {
                 Healthy • Fresh • Cruelty Free
               </div>
             </div>
-
           </div>
 
           {/* Slider dots */}
@@ -77,7 +74,6 @@ const Home = () => {
             <span className="w-2 h-2 rounded-full bg-gray-300" />
           </div>
         </section>
-
       </div>
     </main>
   );
