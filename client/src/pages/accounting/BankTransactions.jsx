@@ -21,6 +21,15 @@ const EMPTY_FORM = {
   reference_no: "",
 };
 
+const formatMoney = (value) => {
+  const num = Number(value || 0);
+  if (Number.isNaN(num)) return "0.00";
+  return num.toLocaleString("en-BD", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 export default function BankTransactions() {
   const [bankAccounts, setBankAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -36,7 +45,7 @@ export default function BankTransactions() {
   const fetchBankAccounts = async () => {
     try {
       const res = await AxiosInstance.get("bank-accounts/");
-      setBankAccounts(res.data);
+      setBankAccounts(res.data || []);
     } catch (err) {
       console.error(err);
       setError("Failed to load bank accounts");
@@ -75,6 +84,7 @@ export default function BankTransactions() {
   const resetForm = () => {
     setForm(EMPTY_FORM);
     setEditingId(null);
+    setError("");
   };
 
   const handleSubmit = async (e) => {
@@ -108,8 +118,11 @@ export default function BankTransactions() {
         await AxiosInstance.post("bank-transactions/", payload);
         alert("Bank transaction saved");
       }
+
       resetForm();
-      fetchTransactions();
+
+      // ✅ Refresh both transactions and bank accounts
+      await Promise.all([fetchTransactions(), fetchBankAccounts()]);
     } catch (err) {
       console.error(err);
       const detail =
@@ -132,6 +145,7 @@ export default function BankTransactions() {
       narration: item.narration || "",
       reference_no: item.reference_no || "",
     });
+    setError("");
   };
 
   const handleDelete = async (id) => {
@@ -139,7 +153,7 @@ export default function BankTransactions() {
       return;
     try {
       await AxiosInstance.delete(`bank-transactions/${id}/`);
-      fetchTransactions();
+      await Promise.all([fetchTransactions(), fetchBankAccounts()]);
     } catch (err) {
       console.error(err);
       alert("Failed to delete transaction");
@@ -153,6 +167,10 @@ export default function BankTransactions() {
     return Number(val).toFixed(2);
   };
 
+  const selectedAccount = bankAccounts.find(
+    (acc) => acc.id === Number(form.bank_account)
+  );
+
   return (
     <div className="p-4">
       <h2 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-2">
@@ -163,6 +181,23 @@ export default function BankTransactions() {
       {error && (
         <div className="mb-3 bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2 rounded">
           {error}
+        </div>
+      )}
+
+      {/* Selected account balance info */}
+      {selectedAccount && (
+        <div className="mb-3 text-sm text-gray-800 bg-blue-50 border border-blue-200 rounded px-3 py-2 inline-block">
+          <div className="font-semibold">
+            {selectedAccount.accountName} (
+            {selectedAccount.bankName_name || selectedAccount.bankName} -{" "}
+            {selectedAccount.accountNo})
+          </div>
+          <div>
+            Current Balance:{" "}
+            <span className="font-bold text-green-700">
+              {formatMoney(selectedAccount.current_balance)}
+            </span>
+          </div>
         </div>
       )}
 
@@ -185,7 +220,9 @@ export default function BankTransactions() {
             <option value="">-- Select Account --</option>
             {bankAccounts.map((acc) => (
               <option key={acc.id} value={acc.id}>
-                {acc.accountName} ({acc.bankName} - {acc.accountNo})
+                {acc.accountName} (
+                {acc.bankName_name || acc.bankName} - {acc.accountNo}) — Bal:{" "}
+                {formatMoney(acc.current_balance)}
               </option>
             ))}
           </select>
@@ -326,7 +363,7 @@ export default function BankTransactions() {
                   </td>
                   <td className="border border-gray-400 px-2 py-1">
                     {item.bank_account_detail
-                      ? `${item.bank_account_detail.accountName} (${item.bank_account_detail.bankName})`
+                      ? `${item.bank_account_detail.accountName} (${item.bank_account_detail.bankName_name || item.bank_account_detail.bankName} - ${item.bank_account_detail.accountNo})`
                       : item.bank_account}
                   </td>
                   <td className="border border-gray-400 px-2 py-1">

@@ -2,15 +2,26 @@ import React, { useEffect, useState } from "react";
 import AxiosInstance from "../../../components/AxiosInstance";
 import { FaEdit, FaTrash } from "react-icons/fa";
 
+const safeNumber = (value) => {
+  const n = parseFloat(value);
+  return Number.isNaN(n) ? 0 : n;
+};
+
+const formatMoney = (value) =>
+  safeNumber(value).toLocaleString("en-BD", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
 export default function BankAccount() {
   const [bankAccounts, setBankAccounts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [banks, setBanks] = useState([]);
 
   const [formData, setFormData] = useState({
-    accountCategory: "", // will hold category ID
+    accountCategory: "",
+    bankName: "",
     accountName: "",
-    bankName: "",        // will hold bank ID
     accountNo: "",
     bankAddress: "",
     bankContact: "",
@@ -19,8 +30,9 @@ export default function BankAccount() {
   });
 
   const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // Fetch account categories
+  // ---------- Load dropdown data & list ----------
   const fetchCategories = async () => {
     try {
       const res = await AxiosInstance.get("account-categories/");
@@ -30,7 +42,6 @@ export default function BankAccount() {
     }
   };
 
-  // Fetch banks
   const fetchBanks = async () => {
     try {
       const res = await AxiosInstance.get("banks/");
@@ -40,35 +51,38 @@ export default function BankAccount() {
     }
   };
 
-  // Fetch bank accounts
   const fetchBankAccounts = async () => {
     try {
+      setLoading(true);
       const res = await AxiosInstance.get("bank-accounts/");
       setBankAccounts(res.data || []);
     } catch (err) {
       console.error("Error loading bank accounts:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Load on page open
   useEffect(() => {
     fetchBanks();
     fetchCategories();
     fetchBankAccounts();
   }, []);
 
-  // Handle input change
+  // ---------- Form helpers ----------
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  // Reset form
   const resetForm = () => {
     setFormData({
       accountCategory: "",
-      accountName: "",
       bankName: "",
+      accountName: "",
       accountNo: "",
       bankAddress: "",
       bankContact: "",
@@ -78,14 +92,14 @@ export default function BankAccount() {
     setEditingId(null);
   };
 
-  // Save / Update
+  // ---------- Save / Update ----------
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const payload = {
       ...formData,
-      // ensure numeric for backend
-      opening_balance: parseFloat(formData.opening_balance) || 0,
+      // enforce numeric on backend
+      opening_balance: safeNumber(formData.opening_balance),
     };
 
     try {
@@ -105,25 +119,36 @@ export default function BankAccount() {
     }
   };
 
-  // Edit row
+  // ---------- Edit ----------
   const handleEdit = (item) => {
+    // bankName & accountCategory might be IDs or nested objects
+    const bankId =
+      typeof item.bankName === "object" && item.bankName !== null
+        ? item.bankName.id
+        : item.bankName;
+
+    const categoryId =
+      typeof item.accountCategory === "object" && item.accountCategory !== null
+        ? item.accountCategory.id
+        : item.accountCategory;
+
     setEditingId(item.id);
     setFormData({
-      accountCategory: item.accountCategory, // ID
-      accountName: item.accountName,
-      bankName: item.bankName,             // ID
-      accountNo: item.accountNo,
-      bankAddress: item.bankAddress,
-      bankContact: item.bankContact,
-      bankMail: item.bankMail,
+      accountCategory: categoryId || "",
+      bankName: bankId || "",
+      accountName: item.accountName || "",
+      accountNo: item.accountNo || "",
+      bankAddress: item.bankAddress || "",
+      bankContact: item.bankContact || "",
+      bankMail: item.bankMail || "",
       opening_balance:
         item.opening_balance !== null && item.opening_balance !== undefined
-          ? item.opening_balance
+          ? String(item.opening_balance)
           : "",
     });
   };
 
-  // Delete row
+  // ---------- Delete ----------
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this bank account?")) {
       return;
@@ -274,82 +299,89 @@ export default function BankAccount() {
           />
         </div>
 
-        <button
-          type="submit"
-          className="col-span-2 bg-blue-700 text-white py-2 rounded"
-        >
-          {editingId ? "Update" : "Save"}
-        </button>
+        <div className="col-span-2">
+          <button
+            type="submit"
+            className="bg-blue-700 text-white py-2 px-4 rounded w-full"
+          >
+            {editingId ? "Update" : "Save"}
+          </button>
+        </div>
       </form>
 
       {/* TABLE */}
-      <table className="w-full border mt-5 text-sm">
-        <thead className="bg-blue-950 text-white">
-          <tr>
-            <th className="border p-1">SL</th>
-            <th className="border p-1">Bank</th>
-            <th className="border p-1">Category</th>
-            <th className="border p-1">Account Name</th>
-            <th className="border p-1">Account No</th>
-            <th className="border p-1">Opening Balance</th>
-            <th className="border p-1">Current Balance</th>
-            <th className="border p-1">Edit</th>
-            <th className="border p-1">Delete</th>
-          </tr>
-        </thead>
+      <div className="mt-5">
+        {loading ? (
+          <p className="text-sm text-gray-500">Loading bank accounts...</p>
+        ) : (
+          <table className="w-full border text-sm">
+            <thead className="bg-blue-950 text-white">
+              <tr>
+                <th className="border p-1">SL</th>
+                <th className="border p-1">Bank</th>
+                <th className="border p-1">Category</th>
+                <th className="border p-1">Account Name</th>
+                <th className="border p-1">Account No</th>
+                <th className="border p-1">Opening Balance</th>
+                <th className="border p-1">Current Balance</th>
+                <th className="border p-1">Edit</th>
+                <th className="border p-1">Delete</th>
+              </tr>
+            </thead>
 
-        <tbody>
-          {bankAccounts.map((item, index) => (
-            <tr key={item.id} className="text-center">
-              <td className="border p-1">{index + 1}</td>
-              {/* Show readable names; fall back to raw value if needed */}
-              <td className="border p-1">
-                {item.bankName_name || item.bankName}
-              </td>
-              <td className="border p-1">
-                {item.accountCategory_name || item.accountCategory}
-              </td>
-              <td className="border p-1">{item.accountName}</td>
-              <td className="border p-1">{item.accountNo}</td>
-              <td className="border p-1">
-                {item.opening_balance !== undefined &&
-                item.opening_balance !== null
-                  ? item.opening_balance
-                  : ""}
-              </td>
-              <td className="border p-1">
-                {item.current_balance !== undefined &&
-                item.current_balance !== null
-                  ? item.current_balance
-                  : ""}
-              </td>
-
-              <td
-                className="border p-1 text-yellow-600 cursor-pointer"
-                onClick={() => handleEdit(item)}
-              >
-                <FaEdit />
-              </td>
-              <td
-                className="border p-1 text-red-600 cursor-pointer"
-                onClick={() => handleDelete(item.id)}
-              >
-                <FaTrash />
-              </td>
-            </tr>
-          ))}
-          {bankAccounts.length === 0 && (
-            <tr>
-              <td
-                colSpan={9}
-                className="border p-2 text-center text-gray-500"
-              >
-                No bank accounts found.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            <tbody>
+              {bankAccounts.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={9}
+                    className="border p-2 text-center text-gray-500"
+                  >
+                    No bank accounts found.
+                  </td>
+                </tr>
+              ) : (
+                bankAccounts.map((item, index) => (
+                  <tr key={item.id} className="text-center">
+                    <td className="border p-1">{index + 1}</td>
+                    <td className="border p-1">
+                      {item.bankName_name || item.bankName}
+                    </td>
+                    <td className="border p-1">
+                      {item.accountCategory_name || item.accountCategory}
+                    </td>
+                    <td className="border p-1">{item.accountName}</td>
+                    <td className="border p-1">{item.accountNo}</td>
+                    <td className="border p-1">
+                      {item.opening_balance !== undefined &&
+                      item.opening_balance !== null
+                        ? formatMoney(item.opening_balance)
+                        : ""}
+                    </td>
+                    <td className="border p-1">
+                      {item.current_balance !== undefined &&
+                      item.current_balance !== null
+                        ? formatMoney(item.current_balance)
+                        : ""}
+                    </td>
+                    <td
+                      className="border p-1 text-yellow-600 cursor-pointer"
+                      onClick={() => handleEdit(item)}
+                    >
+                      <FaEdit />
+                    </td>
+                    <td
+                      className="border p-1 text-red-600 cursor-pointer"
+                      onClick={() => handleDelete(item.id)}
+                    >
+                      <FaTrash />
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }

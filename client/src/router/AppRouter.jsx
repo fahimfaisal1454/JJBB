@@ -43,7 +43,7 @@ import PettyCash from "../pages/accounting/PettyCash";
 import CashReconciliation from "../pages/accounting/CashReconciliation";
 import BankReconciliation from "../pages/accounting/BankReconciliation";
 import BankTransactions from "../pages/accounting/BankTransactions";
-
+import BankStatement from "../pages/accounting/BankStatement";
 // Stock
 import Stocks from "../pages/stock/Stocks/Stocks";
 import Products from "../pages/stock/Products/Products";
@@ -139,8 +139,9 @@ export default function AppRouter() {
         <Route path="/accounting/petty-cash" element={<PettyCash />} />
         <Route path="/accounting/cash-reconciliation" element={<CashReconciliation />} />
         <Route path="/accounting/bank-reconciliation" element={<BankReconciliation/>} />
-        <Route path="/accounting/bank-transactions"element={<BankTransactions />}
-/>
+        <Route path="/accounting/bank-transactions"element={<BankTransactions />}/>
+        <Route path="/accounting/bank-statement" element={<BankStatement />} />
+
         {/* Stock */}
         <Route path="/dashboard/stocks" element={<Stocks />} />
         <Route path="/dashboard/products" element={<Products />} />

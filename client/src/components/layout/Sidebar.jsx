@@ -51,7 +51,7 @@ const menuConfig = [
       { label: "Cash Reconciliation", path: "/accounting/cash-reconciliation" },
       { label: "Bank Reconciliation", path: "/accounting/bank-reconciliation" },
       { label: "Bank Transaction", path: "/accounting/bank-transactions" },  
-
+      { label: "Bank Statement", path: "/accounting/bank-statement" },
     ],
   },
   {
