@@ -22,7 +22,9 @@ export default function Stocks() {
   const [selectedEditStock, setSelectedEditStock] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [selectedCategory, setSelectedCategory] = useState(
+
+  // ✅ read selected business category from localStorage
+  const [selectedCategory] = useState(
     JSON.parse(localStorage.getItem("business_category")) || null
   );
 
@@ -30,7 +32,17 @@ export default function Stocks() {
   useEffect(() => {
     const fetchStocks = async () => {
       try {
-        const res = await AxiosInstance.get(`stocks/?business_category=${selectedCategory.id}`);
+        // if no category in localStorage, just load all or stop
+        if (!selectedCategory?.id) {
+          setItems([]);
+          setLoading(false);
+          return;
+        }
+
+        const res = await AxiosInstance.get(
+          `stocks/`,
+          { params: { business_category: selectedCategory.id } }
+        );
         setItems(res.data);
       } catch (err) {
         console.error("Failed to fetch stocks:", err);
@@ -39,8 +51,9 @@ export default function Stocks() {
         setLoading(false);
       }
     };
+
     fetchStocks();
-  }, []);
+  }, [selectedCategory]);
 
   const updateItem = (updatedStock) => {
     setItems((prev) =>
@@ -136,7 +149,7 @@ export default function Stocks() {
       case "Expired":
         matchesFilter = isExpired(item);
         break;
-      case "Expiring soon": // 🔔 NEW filter
+      case "Expiring soon": // filter for soon-expiring
         matchesFilter = isExpiringSoon(item);
         break;
       default:
@@ -193,7 +206,6 @@ export default function Stocks() {
           description="Units past expiry that should not be served."
           tone={expiredUnits > 0 ? "bad" : "good"}
         />
-        {/* 🔔 NEW: Expiring soon KPI */}
         <StatCard
           title="Expiring Soon (2 days)"
           value={expiringSoonUnits}
@@ -244,7 +256,7 @@ export default function Stocks() {
               <option value="All">Filter: All</option>
               <option value="Low stock">Low stock</option>
               <option value="Expired">Expired</option>
-              <option value="Expiring soon">Expiring soon</option> {/* NEW */}
+              <option value="Expiring soon">Expiring soon</option>
             </select>
           </div>
         </div>
@@ -320,7 +332,7 @@ export default function Stocks() {
                   +
                 </td>
                 <td className="py-2 px-2 text-right text-xs space-x-2">
-                  <button 
+                  <button
                     className="px-2 py-1 rounded border border-slate-200 hover:border-blue-500"
                     onClick={() => setSelectedEditStock(item)}
                   >

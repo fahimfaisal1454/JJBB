@@ -27,11 +27,22 @@ export default function Dashboard() {
   const [customers, setCustomers] = useState([]);
   const [vendors, setVendors] = useState([]);
 
+  // ✅ get selected business category from localStorage
+  const [selectedCategory] = useState(
+    JSON.parse(localStorage.getItem("business_category")) || null
+  );
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
         setError("");
+
+        // ✅ helper to attach business_category param if available
+        const buildConfig = () =>
+          selectedCategory?.id
+            ? { params: { business_category: selectedCategory.id } }
+            : {};
 
         const [
           salesRes,
@@ -41,12 +52,12 @@ export default function Dashboard() {
           customersRes,
           vendorsRes,
         ] = await Promise.all([
-          AxiosInstance.get("sales/"),
-          AxiosInstance.get("expenses/"),
-          AxiosInstance.get("salary-expenses/"),
-          AxiosInstance.get("stocks/"),
-          AxiosInstance.get("customers/"),
-          AxiosInstance.get("vendors/"),
+          AxiosInstance.get("sales/", buildConfig()),
+          AxiosInstance.get("expenses/", buildConfig()),
+          AxiosInstance.get("salary-expenses/", buildConfig()),
+          AxiosInstance.get("stocks/", buildConfig()),
+          AxiosInstance.get("customers/", buildConfig()),
+          AxiosInstance.get("vendors/", buildConfig()),
         ]);
 
         const normalize = (raw) =>
@@ -70,7 +81,7 @@ export default function Dashboard() {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [selectedCategory]);
 
   // ---------- Helpers ----------
   const safeNumber = (value) => {
