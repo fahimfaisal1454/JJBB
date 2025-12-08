@@ -5,12 +5,15 @@ export default function AddProductModal({ editProduct, closeModal, refreshProduc
   const modalRef = useRef();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [selectedBusinessCategory, setSelectedBusinessCategory] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(
+    JSON.parse(localStorage.getItem("business_category")) || null
+  );
+
 
   const [formData, setFormData] = useState({
+    business_category: selectedCategory.id,
     product_name: "",
     product_code: "",
-    business_category: 1,
     price: "",
     unit: "",
     remarks: "",
@@ -20,9 +23,9 @@ export default function AddProductModal({ editProduct, closeModal, refreshProduc
   useEffect(() => {
     if (editProduct) {
       setFormData({
+        business_category: selectedCategory.id,
         product_name: editProduct.product_name || "",
         product_code: editProduct.product_code || "",
-        business_category: editProduct.business_category || 1,
         price: editProduct.price || "",
         unit: editProduct.unit || "",
         remarks: editProduct.remarks || "",
@@ -30,14 +33,6 @@ export default function AddProductModal({ editProduct, closeModal, refreshProduc
     }
   }, [editProduct]);
 
-  useEffect(() => {
-    const storedCategory = localStorage.getItem("selectedBusinessCategory");
-    if (storedCategory) {
-      const data = JSON.parse(storedCategory);
-      setSelectedBusinessCategory(data);
-      setFormData(prev => ({ ...prev, business_category: data.id }));
-    }
-  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -146,13 +141,6 @@ export default function AddProductModal({ editProduct, closeModal, refreshProduc
                 </svg>
               </div>
               <p className="text-red-700 text-sm flex-1">{errors.submit}</p>
-            </div>
-          )}
-
-          {selectedBusinessCategory && (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-              <p className="text-green-600 font-semibold">{selectedBusinessCategory.name}</p>
-              <p className="text-green-500 text-xs mt-1">ID: {selectedBusinessCategory.id}</p>
             </div>
           )}
 
