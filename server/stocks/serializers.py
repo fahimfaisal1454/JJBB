@@ -1,6 +1,7 @@
 from .models import *
 from rest_framework import serializers
 from master.serializers import BusinessCategorySerializer
+from master.models import BusinessCategory
 
 # ----------------------------
 # Product Serializer

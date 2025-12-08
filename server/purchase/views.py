@@ -1,6 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 from .models import *
+from master.models import BusinessCategory
 from .serializers import *
 from django.db.models import Q
 from stocks.models import StockProduct
@@ -199,7 +200,18 @@ class UploadStockExcelView(APIView):
         file = request.FILES.get("xl_file")
         invoice_no = request.data.get("invoice_no", "AUTO_GENERATE")
         purchase_date = request.data.get("purchase_date")
-        business_category = request.data.get("business_category")
+        business_category_id = request.data.get("business_category")
+
+
+        try:
+            business_category_id = int(business_category_id)
+            business_category = BusinessCategory.objects.get(id=business_category_id)
+        except (TypeError, ValueError):
+            return Response({"error": "Invalid business_category"}, status=status.HTTP_400_BAD_REQUEST)
+        except BusinessCategory.DoesNotExist:
+            return Response({"error": "BusinessCategory not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        print("business_category", type(business_category))
 
         if not file:
             return Response({"error": "No file uploaded"}, status=400)
@@ -285,7 +297,7 @@ class UploadStockExcelView(APIView):
                 # Create purchase entry safely
                 try:
                     create_purchase_entry({
-                        business_category:business_category,
+                        "business_category":business_category,
                         "invoice_no": invoice_no,
                         "purchase_date": purchase_date,
                         "product": product,

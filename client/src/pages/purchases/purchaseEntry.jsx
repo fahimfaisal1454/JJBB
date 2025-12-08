@@ -9,7 +9,7 @@ export default function PurchaseEntry() {
     );
 
     const [formData, setFormData] = useState({
-        business_category: selectedCategory.id,
+        business_category: selectedCategory?.id || null,
         invoice_no: 'AUTO GENERATE',
         purchase_date: '',
         display_purchase_date: '',
