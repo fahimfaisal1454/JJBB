@@ -34,13 +34,10 @@ const Login = () => {
       localStorage.setItem("access_token", access);
 
       // Optional: immediately refresh context user
-      if (refreshUser) {
-        refreshUser();
-      }
-
-      console.log("Superuser! Found !")
-      console.log("Superuser", user.role)
-      if (user?.role === "superuser") {
+      const updatedUser = await refreshUser();
+      
+      console.log("User after login:", updatedUser);
+      if (updatedUser?.role === "superuser") {
         console.log("Superuser Found !")
         await SetCategory();
       }

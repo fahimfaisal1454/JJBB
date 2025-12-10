@@ -10,8 +10,8 @@ export const useUser = () => {
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    // const storedUser = localStorage.getItem("user") ;
-    // return storedUser ? JSON.parse(storedUser) : null; // Retrieve user data from localStorage
+    const storedUser = localStorage.getItem("user") ;
+    return storedUser ? JSON.parse(storedUser) : null; // Retrieve user data from localStorage
   });  
   
   const [loading, setLoading] = useState(false);
@@ -34,9 +34,11 @@ export const UserProvider = ({ children }) => {
       setError(null);
 
       const response = await AxiosInstance.get('user/');
+      console.log("Fetched user data:", response.data);
 
       setUser(response.data);
       localStorage.setItem("user", JSON.stringify(response.data));
+      return response.data;
 
     } catch (err) {
       console.error(err);
@@ -48,13 +50,15 @@ export const UserProvider = ({ children }) => {
   };
 
 
-  const refreshUser = () => {
-    fetchUserData();
+  const refreshUser = async() => {
+    const updatedUser = await fetchUserData();
+    return updatedUser;
   };
 
   // Handle Sign Out
   const signOut = () => {
     localStorage.removeItem("access_token"); 
+    localStorage.removeItem("user");
     setUser(null);
     
   };
