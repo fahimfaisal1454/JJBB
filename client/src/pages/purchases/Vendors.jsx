@@ -13,7 +13,6 @@ import AxiosInstance from "../../components/AxiosInstance";
 export default function Vendors() {
   const [vendors, setVendors] = useState([]);
   const [search, setSearch] = useState("");
-  const [form, setForm] = useState(EMPTY_FORM);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -39,8 +38,8 @@ export default function Vendors() {
     );
 
 
-  const EMPTY_FORM = {
-    business_category: selectedCategory.id,
+  const getEmptyForm = (categoryId) => ({
+    business_category: categoryId,
     vendor_name: "",
     division: "",
     district: "",
@@ -55,13 +54,15 @@ export default function Vendors() {
     nid_no: "",
     remarks: "",
     previous_due_amount: "",
-    };
+    });
+
+  const [form, setForm] = useState(() => getEmptyForm(selectedCategory.id));
 
 
   // ---------- helpers ----------
 
   const resetFormState = () => {
-    setForm(EMPTY_FORM);
+    setForm(getEmptyForm(selectedCategory.id));
     setEditingId(null);
     setSelectedDivisionId("");
     setSelectedDistrictId("");
@@ -80,7 +81,9 @@ export default function Vendors() {
       const params = {};
       if (searchValue.trim()) params.search = searchValue.trim();
 
-      const res = await AxiosInstance.get(`vendors/?business_category=${selectedCategory.id}`);
+      const res = await AxiosInstance.get("vendors",{
+         params: {business_category:selectedCategory.id }}
+        );
       const data = res.data;
       const items = Array.isArray(data) ? data : data.results || [];
       setVendors(items);
