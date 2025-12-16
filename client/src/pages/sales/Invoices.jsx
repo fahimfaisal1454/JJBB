@@ -139,7 +139,7 @@ export default function SalesList() {
   const [returnData, setReturnData] = useState([]);
   const [payModalSale, setPayModalSale] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(
-      JSON.parse(localStorage.getItem("business_category")) || null
+    JSON.parse(localStorage.getItem("business_category")) || null
   );
 
   const [formData, setFormData] = useState({
@@ -173,7 +173,7 @@ export default function SalesList() {
     setLoading(true);
     try {
       const res = await AxiosInstance.get("/sales/", {
-        params:{business_category:selectedCategory?.id || null}
+        params: { business_category: selectedCategory?.id || null },
       });
       setAllSales(res.data);
       setSales(res.data);
@@ -188,7 +188,7 @@ export default function SalesList() {
   const fetchStockData = async () => {
     try {
       const response = await AxiosInstance.get("/stocks/", {
-        params:{business_category:selectedCategory?.id || null}
+        params: { business_category: selectedCategory?.id || null },
       });
       setStockData(response.data);
     } catch (error) {
@@ -219,8 +219,8 @@ export default function SalesList() {
             setDistricts(res.data.map((d) => ({ value: d.id, label: d.name })));
           }),
           AxiosInstance.get("/customers/", {
-          params:{business_category:selectedCategory?.id || null}
-        }).then((res) => {
+            params: { business_category: selectedCategory?.id || null },
+          }).then((res) => {
             setCustomers(
               res.data.map((c) => ({
                 value: c.id,
@@ -235,14 +235,13 @@ export default function SalesList() {
     };
 
     fetchInitialData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Toggle row expansion
   const toggleRow = (id) => {
     const newExpandedRows = new Set(expandedRows);
-    newExpandedRows.has(id)
-      ? newExpandedRows.delete(id)
-      : newExpandedRows.add(id);
+    newExpandedRows.has(id) ? newExpandedRows.delete(id) : newExpandedRows.add(id);
     setExpandedRows(newExpandedRows);
   };
 
@@ -251,9 +250,7 @@ export default function SalesList() {
     let filtered = [...allSales];
 
     if (filters.customer) {
-      filtered = filtered.filter(
-        (s) => s.customer?.id === filters.customer.value
-      );
+      filtered = filtered.filter((s) => s.customer?.id === filters.customer.value);
     }
 
     if (filters.district) {
@@ -264,9 +261,7 @@ export default function SalesList() {
 
     if (filters.billNo.trim() !== "") {
       filtered = filtered.filter((s) =>
-        s.invoice_no
-          ?.toLowerCase()
-          .includes(filters.billNo.trim().toLowerCase())
+        s.invoice_no?.toLowerCase().includes(filters.billNo.trim().toLowerCase())
       );
     }
 
@@ -304,10 +299,8 @@ export default function SalesList() {
 
     const dueAmount = (
       parseFloat(sale.total_payable_amount || 0) -
-      (sale.payments?.reduce(
-        (acc, p) => acc + parseFloat(p.paid_amount || 0),
-        0
-      ) || 0)
+      (sale.payments?.reduce((acc, p) => acc + parseFloat(p.paid_amount || 0), 0) ||
+        0)
     ).toFixed(2);
 
     setReturnModalSale(sale);
@@ -392,8 +385,7 @@ export default function SalesList() {
       return;
     }
 
-    const saleProductId =
-      returnModalSale.products[formData.selectedProductIndex]?.id;
+    const saleProductId = returnModalSale.products[formData.selectedProductIndex]?.id;
     if (!saleProductId) {
       toast.error("Invalid product selected!");
       return;
@@ -433,7 +425,7 @@ export default function SalesList() {
     }
   };
 
-  // ======== CLEANED-UP INVOICE PDF (no brand / part no) =========
+  // ======== CLEANED-UP INVOICE PDF (header replaced with image text) =========
   const handleGenerateSalePdf = (sale) => {
     const totalQty = sale.products.reduce(
       (sum, item) => sum + parseFloat(item.sale_quantity || 0),
@@ -442,9 +434,7 @@ export default function SalesList() {
     const totalAmount = parseFloat(sale.total_amount || 0);
     const discount = parseFloat(sale.discount_amount || 0);
     const grossTotal = totalAmount - discount;
-    const previousBalance = parseFloat(
-      sale.customer?.previous_due_amount || 0
-    );
+    const previousBalance = parseFloat(sale.customer?.previous_due_amount || 0);
     const netAmount = grossTotal;
     const paidAmount =
       sale.payments?.reduce(
@@ -464,9 +454,22 @@ export default function SalesList() {
       hour12: true,
     });
 
+    // Bangla heading (from your image)
+    const bnHeader = {
+      topTag: "ক্যাশ মেমো",
+      title: "জয়যাত্রা ফুড কর্ণার",
+      address1: "২২/৭ হরিনাথ দত্ত লেন, নিরালাপট্টি, যশোর।",
+      address2: "(নেতা হাসপাতালের পাশে)",
+      mobile: "মোবাঃ ০১৩১৬-৮১৬৮১৯",
+    };
+
     const htmlContent = `
   <html>
   <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;800&display=swap" rel="stylesheet">
+
     <style>
       @page { margin: 15mm; size: A4; }
 
@@ -481,13 +484,30 @@ export default function SalesList() {
         box-sizing: border-box;
       }
 
+      .bn { font-family: "Noto Sans Bengali", Arial, sans-serif; }
+
       .header {
         text-align: center;
         line-height: 1.4;
+        margin-top: 2px;
       }
 
-      .company-name { font-size: 20px; font-weight: bold; }
-      .subtitle { font-size: 16px; font-weight: semibold; }
+      .bn-top-tag {
+        display: inline-block;
+        font-weight: 700;
+        font-size: 14px;
+        padding: 2px 12px;
+        border: 1px solid #000;
+        border-radius: 18px;
+        margin-bottom: 6px;
+      }
+
+      .bn-title {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: 0.2px;
+      }
+
       .contact-info {
         font-size: 12px;
         color: #444;
@@ -576,13 +596,13 @@ export default function SalesList() {
   </head>
   <body>
     <div class="main-content">
+      <!-- ✅ REPLACED HEADER -->
       <div class="header">
-        <div class="company-name">Feroz Autos</div>
-        <div class="subtitle">A company which fulfill your demands</div>
-        <div class="contact-info">Genuine Motorcycle Parts Importer & WholePurchaser.</div>
-        <div class="contact-info">77.R.N.Road, Noldanga Road (Heaven Building), Jashore-7400</div>
-        <div class="contact-info">Phone:0421-66095, Mob: 01924-331354, 01711-355328, 01778-117515</div>
-        <div class="contact-info">E-mail: heavenautos77jsr@yahoo.com / heavenautojessore@gmail.com</div>
+        <div class="bn bn-top-tag">${bnHeader.topTag}</div>
+        <div class="bn bn-title">${bnHeader.title}</div>
+        <div class="bn contact-info">${bnHeader.address1}</div>
+        <div class="bn contact-info">${bnHeader.address2}</div>
+        <div class="bn contact-info">${bnHeader.mobile}</div>
       </div>
 
       <h2 style="text-align:center; margin: 20px 0;">Sale Invoice</h2>
@@ -590,18 +610,12 @@ export default function SalesList() {
       <div class="customer-info">
         <div class="left-info">
           <div><strong>Invoice No:</strong> ${sale.invoice_no || "N/A"}</div>
-          <div><strong>Customer Name:</strong> ${
-            sale.customer?.customer_name || "N/A"
-          }</div>
-          <div><strong>Address:</strong> ${
-            sale.customer?.address || "N/A"
-          }</div>
+          <div><strong>Customer Name:</strong> ${sale.customer?.customer_name || "N/A"}</div>
+          <div><strong>Address:</strong> ${sale.customer?.address || "N/A"}</div>
         </div>
         <div class="right-info" style="text-align:right;">
           <div><strong>Sale Date:</strong> ${sale.sale_date || "N/A"}</div>
-          <div><strong>Shop Name:</strong> ${
-            sale.customer?.shop_name || "N/A"
-          }</div>
+          <div><strong>Shop Name:</strong> ${sale.customer?.shop_name || "N/A"}</div>
           <div><strong>Phone:</strong> ${sale.customer?.phone1 || "N/A"}</div>
         </div>
       </div>
@@ -625,21 +639,11 @@ export default function SalesList() {
               (item, index) => `
             <tr>
               <td class="text-center">${index + 1}</td>
-              <td class="text-center">${
-                item.product?.product_name || "N/A"
-              }</td>
-              <td class="text-center">${parseFloat(
-                item.sale_quantity || 0
-              ).toFixed(2)}</td>
-              <td class="text-center">${parseFloat(
-                item.product?.product_mrp || 0
-              ).toFixed(2)}</td>
-              <td class="text-center">${parseFloat(
-                item.sale_price || 0
-              ).toFixed(2)}</td>
-              <td class="text-center">${parseFloat(
-                item.total_price || 0
-              ).toFixed(2)}</td>
+              <td class="text-center">${item.product?.product_name || "N/A"}</td>
+              <td class="text-center">${parseFloat(item.sale_quantity || 0).toFixed(2)}</td>
+              <td class="text-center">${parseFloat(item.product?.product_mrp || 0).toFixed(2)}</td>
+              <td class="text-center">${parseFloat(item.sale_price || 0).toFixed(2)}</td>
+              <td class="text-center">${parseFloat(item.total_price || 0).toFixed(2)}</td>
             </tr>
           `
             )
@@ -647,9 +651,7 @@ export default function SalesList() {
           <tr>
             <td colspan="2" style="border: none;"></td>
             <td style="border: none;">Total Quantity</td>
-            <td style="border: none;" class="text-right"><strong>${totalQty.toFixed(
-              2
-            )}</strong></td>
+            <td style="border: none;" class="text-right"><strong>${totalQty.toFixed(2)}</strong></td>
             <td colspan="2" style="border: none;"></td>
           </tr>
         </tbody>
@@ -659,16 +661,12 @@ export default function SalesList() {
         <tr><td>Total Sale Amount</td><td>${totalAmount.toFixed(2)}</td></tr>
         <tr><td>(-) Discount</td><td>${discount.toFixed(2)}</td></tr>
         <tr><td>Gross Total</td><td>${grossTotal.toFixed(2)}</td></tr>
-        <tr><td>(+) Previous Balance</td><td>${previousBalance.toFixed(
-          2
-        )}</td></tr>
+        <tr><td>(+) Previous Balance</td><td>${previousBalance.toFixed(2)}</td></tr>
         <tr><td>Net Amount</td><td>${netAmount.toFixed(2)}</td></tr>
         <tr><td>Paid Taka</td><td>${paidAmount.toFixed(2)}</td></tr>
         <tr><td>Returnable Taka</td><td>0.00</td></tr>
         <tr><td>Due Balance</td><td>${dueAmount.toFixed(2)}</td></tr>
-        <tr><td>Total Due Balance</td><td>${totalDueBalance.toFixed(
-          2
-        )}</td></tr>
+        <tr><td>Total Due Balance</td><td>${totalDueBalance.toFixed(2)}</td></tr>
       </table>
     </div>
 
@@ -680,7 +678,7 @@ export default function SalesList() {
         </div>
         <div class="signature">
           <div class="signature-line"></div>
-          Approved By (Feroz Autos)
+          Approved By
         </div>
       </div>
       <div class="footer-content">
@@ -768,8 +766,7 @@ export default function SalesList() {
           (acc, p) => acc + parseFloat(p.paid_amount || 0),
           0
         ) || 0;
-      const due =
-        parseFloat(payModalSale.total_payable_amount || 0) - totalPaid;
+      const due = parseFloat(payModalSale.total_payable_amount || 0) - totalPaid;
 
       setPaymentData({
         paymentMode: "",
@@ -853,8 +850,7 @@ export default function SalesList() {
         (acc, p) => acc + parseFloat(p.paid_amount || 0),
         0
       ) || 0;
-    const due =
-      parseFloat(payModalSale.total_payable_amount || 0) - totalPaid;
+    const due = parseFloat(payModalSale.total_payable_amount || 0) - totalPaid;
 
     if (paid > due) {
       toast.error("Paid amount cannot be greater than due.");
@@ -866,7 +862,7 @@ export default function SalesList() {
     );
     const paymentModeLabel = selectedMode?.label || "";
 
-    // 🔥 NOTE: sale_id key to match serializer
+    // sale_id key to match serializer
     return {
       sale_id: payModalSale.id,
       payment_mode: paymentModeLabel,
@@ -962,18 +958,14 @@ export default function SalesList() {
         </div>
         <div className="text-xs md:text-sm text-slate-500">
           Total Invoices:{" "}
-          <span className="font-semibold text-slate-700">
-            {allSales.length}
-          </span>
+          <span className="font-semibold text-slate-700">{allSales.length}</span>
         </div>
       </div>
 
       {/* Filters */}
       <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-slate-700">
-            Filter Invoices
-          </h2>
+          <h2 className="text-sm font-semibold text-slate-700">Filter Invoices</h2>
         </div>
         <div className="grid gap-3 md:grid-cols-3">
           <div>
@@ -1045,10 +1037,7 @@ export default function SalesList() {
             <tbody>
               {paginatedSales.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={12}
-                    className="py-10 text-center text-sm text-slate-500"
-                  >
+                  <td colSpan={12} className="py-10 text-center text-sm text-slate-500">
                     {loading ? "Loading..." : "No invoices found."}
                   </td>
                 </tr>
@@ -1090,8 +1079,7 @@ export default function SalesList() {
                           </div>
                           <div className="truncate text-[11px] text-slate-500">
                             Address:{" "}
-                            {sale.customer?.address?.replace(/\r\n/g, ", ") ||
-                              "N/A"}
+                            {sale.customer?.address?.replace(/\r\n/g, ", ") || "N/A"}
                           </div>
                           <div className="text-[11px] text-slate-500">
                             District: {sale.customer?.district || "N/A"}
@@ -1115,9 +1103,7 @@ export default function SalesList() {
                         </td>
 
                         <td className="w-[80px] text-center align-middle">
-                          {parseFloat(sale.total_payable_amount || 0).toFixed(
-                            2
-                          )}
+                          {parseFloat(sale.total_payable_amount || 0).toFixed(2)}
                         </td>
 
                         <td className="w-[80px] text-center align-middle">
@@ -1126,9 +1112,7 @@ export default function SalesList() {
 
                         <td
                           className={`w-[80px] text-center align-middle font-medium ${
-                            dueAmount > 0
-                              ? "text-amber-700"
-                              : "text-emerald-700"
+                            dueAmount > 0 ? "text-amber-700" : "text-emerald-700"
                           }`}
                         >
                           {dueAmount.toFixed(2)}
@@ -1178,12 +1162,8 @@ export default function SalesList() {
                                       <th className="text-center">Item</th>
                                       <th className="text-center">Quantity</th>
                                       <th className="text-center">Price</th>
-                                      <th className="text-center">
-                                        Percentage
-                                      </th>
-                                      <th className="text-center">
-                                        Price with %
-                                      </th>
+                                      <th className="text-center">Percentage</th>
+                                      <th className="text-center">Price with %</th>
                                       <th className="text-center">Total</th>
                                     </tr>
                                   </thead>
@@ -1192,46 +1172,32 @@ export default function SalesList() {
                                       sale.products.map((prod) => (
                                         <tr key={prod.id}>
                                           <td className="truncate">
-                                            {prod.product?.category_detail
-                                              ?.category_name ||
+                                            {prod.product?.category_detail?.category_name ||
                                               prod.product?.product_name ||
                                               ""}
                                           </td>
                                           <td className="text-center">
-                                            {parseFloat(
-                                              prod.sale_quantity || 0
-                                            ).toFixed(2)}
+                                            {parseFloat(prod.sale_quantity || 0).toFixed(2)}
+                                          </td>
+                                          <td className="text-center">
+                                            {parseFloat(prod.sale_price || 0).toFixed(2)}
+                                          </td>
+                                          <td className="text-center">
+                                            {parseFloat(prod.percentage || 0).toFixed(2)}%
                                           </td>
                                           <td className="text-center">
                                             {parseFloat(
-                                              prod.sale_price || 0
+                                              prod.sale_price_with_percentage || 0
                                             ).toFixed(2)}
                                           </td>
                                           <td className="text-center">
-                                            {parseFloat(
-                                              prod.percentage || 0
-                                            ).toFixed(2)}
-                                            %
-                                          </td>
-                                          <td className="text-center">
-                                            {parseFloat(
-                                              prod.sale_price_with_percentage ||
-                                                0
-                                            ).toFixed(2)}
-                                          </td>
-                                          <td className="text-center">
-                                            {parseFloat(
-                                              prod.total_price || 0
-                                            ).toFixed(2)}
+                                            {parseFloat(prod.total_price || 0).toFixed(2)}
                                           </td>
                                         </tr>
                                       ))
                                     ) : (
                                       <tr>
-                                        <td
-                                          colSpan={6}
-                                          className="py-2 text-center text-slate-500"
-                                        >
+                                        <td colSpan={6} className="py-2 text-center text-slate-500">
                                           No products found
                                         </td>
                                       </tr>
@@ -1312,17 +1278,11 @@ export default function SalesList() {
             <div className="mb-4 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
               <div className="grid gap-2 md:grid-cols-4">
                 <div>
-                  <span className="font-semibold text-slate-700">
-                    Total Payable:
-                  </span>{" "}
-                  {parseFloat(
-                    payModalSale.total_payable_amount || 0
-                  ).toFixed(2)}
+                  <span className="font-semibold text-slate-700">Total Payable:</span>{" "}
+                  {parseFloat(payModalSale.total_payable_amount || 0).toFixed(2)}
                 </div>
                 <div>
-                  <span className="font-semibold text-slate-700">
-                    Total Paid:
-                  </span>{" "}
+                  <span className="font-semibold text-slate-700">Total Paid:</span>{" "}
                   {(
                     payModalSale.payments?.reduce(
                       (acc, p) => acc + parseFloat(p.paid_amount || 0),
@@ -1331,9 +1291,7 @@ export default function SalesList() {
                   ).toFixed(2)}
                 </div>
                 <div>
-                  <span className="font-semibold text-slate-700">
-                    Due Amount:
-                  </span>{" "}
+                  <span className="font-semibold text-slate-700">Due Amount:</span>{" "}
                   {(
                     parseFloat(payModalSale.total_payable_amount || 0) -
                     (payModalSale.payments?.reduce(
@@ -1343,9 +1301,7 @@ export default function SalesList() {
                   ).toFixed(2)}
                 </div>
                 <div>
-                  <span className="font-semibold text-slate-700">
-                    Invoice Date:
-                  </span>{" "}
+                  <span className="font-semibold text-slate-700">Invoice Date:</span>{" "}
                   {payModalSale.sale_date || "N/A"}
                 </div>
               </div>
@@ -1365,8 +1321,7 @@ export default function SalesList() {
                     value={
                       paymentData.paymentMode
                         ? paymentModes.find(
-                            (opt) =>
-                              opt.value === Number(paymentData.paymentMode)
+                            (opt) => opt.value === Number(paymentData.paymentMode)
                           ) || null
                         : null
                     }
@@ -1387,9 +1342,8 @@ export default function SalesList() {
                     options={banks}
                     value={
                       paymentData.bankName
-                        ? banks.find(
-                            (opt) => opt.value === Number(paymentData.bankName)
-                          ) || null
+                        ? banks.find((opt) => opt.value === Number(paymentData.bankName)) ||
+                          null
                         : null
                     }
                     onChange={(selected) =>
@@ -1410,9 +1364,7 @@ export default function SalesList() {
                   <input
                     type="text"
                     value={paymentData.accountNo}
-                    onChange={(e) =>
-                      handlePaymentChange("accountNo", e.target.value)
-                    }
+                    onChange={(e) => handlePaymentChange("accountNo", e.target.value)}
                     disabled={!isBank}
                     className={`w-full rounded-md border px-2 py-1 text-xs outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 ${
                       !isBank ? "bg-slate-100 text-slate-400" : ""
@@ -1428,9 +1380,7 @@ export default function SalesList() {
                   <input
                     type="text"
                     value={paymentData.chequeNo}
-                    onChange={(e) =>
-                      handlePaymentChange("chequeNo", e.target.value)
-                    }
+                    onChange={(e) => handlePaymentChange("chequeNo", e.target.value)}
                     disabled={!isCheque}
                     className={`w-full rounded-md border px-2 py-1 text-xs outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 ${
                       !isCheque ? "bg-slate-100 text-slate-400" : ""
@@ -1446,9 +1396,7 @@ export default function SalesList() {
                   <input
                     type="number"
                     value={paymentData.paidAmount}
-                    onChange={(e) =>
-                      handlePaymentChange("paidAmount", e.target.value)
-                    }
+                    onChange={(e) => handlePaymentChange("paidAmount", e.target.value)}
                     className="w-full rounded-md border border-slate-300 px-2 py-1 text-xs outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
                     placeholder="0.00"
                   />
@@ -1505,32 +1453,20 @@ export default function SalesList() {
                     payModalSale.payments.map((payment, idx) => (
                       <tr key={payment.id}>
                         <td className="text-center">{idx + 1}</td>
-                        <td className="text-center">
-                          {payment.due_date || "N/A"}
-                        </td>
+                        <td className="text-center">{payment.due_date || "N/A"}</td>
                         <td className="text-center">
                           {getPaymentModeName(payment.payment_mode)}
                         </td>
-                        <td className="text-center">
-                          {getBankName(payment.bank_name)}
-                        </td>
-                        <td className="text-center">
-                          {payment.account_no || "N/A"}
-                        </td>
-                        <td className="text-center">
-                          {payment.cheque_no || "N/A"}
-                        </td>
+                        <td className="text-center">{getBankName(payment.bank_name)}</td>
+                        <td className="text-center">{payment.account_no || "N/A"}</td>
+                        <td className="text-center">{payment.cheque_no || "N/A"}</td>
                         <td className="text-center">
                           {parseFloat(payment.paid_amount || 0).toFixed(2)}
                         </td>
                         <td className="text-center">
-                          {payment.payment_date
-                            ? payment.payment_date.slice(0, 10)
-                            : "N/A"}
+                          {payment.payment_date ? payment.payment_date.slice(0, 10) : "N/A"}
                         </td>
-                        <td className="text-center">
-                          {payment.due_invoice || "N/A"}
-                        </td>
+                        <td className="text-center">{payment.due_invoice || "N/A"}</td>
                         <td className="text-center">
                           <button
                             className="text-xs font-medium text-slate-700 underline hover:text-slate-900"
@@ -1543,10 +1479,7 @@ export default function SalesList() {
                     ))
                   ) : (
                     <tr>
-                      <td
-                        colSpan={10}
-                        className="py-4 text-center text-sm text-slate-500"
-                      >
+                      <td colSpan={10} className="py-4 text-center text-sm text-slate-500">
                         No payments found.
                       </td>
                     </tr>
@@ -1615,9 +1548,7 @@ export default function SalesList() {
               className="grid gap-3 text-xs md:text-sm md:grid-cols-5"
             >
               <div>
-                <label className="mb-1 block font-medium text-slate-600">
-                  Return Date
-                </label>
+                <label className="mb-1 block font-medium text-slate-600">Return Date</label>
                 <input
                   type="date"
                   name="returnDate"
@@ -1629,16 +1560,12 @@ export default function SalesList() {
               </div>
 
               <div className="col-span-1">
-                <label className="mb-1 block font-medium text-slate-600">
-                  Product Name
-                </label>
+                <label className="mb-1 block font-medium text-slate-600">Product Name</label>
 
                 {returnModalSale.products.length === 1 ? (
                   <input
                     type="text"
-                    value={
-                      returnModalSale.products[0]?.product?.product_name || ""
-                    }
+                    value={returnModalSale.products[0]?.product?.product_name || ""}
                     readOnly
                     className="w-full rounded-md border border-slate-300 bg-slate-100 px-2 py-1 text-sm"
                   />
@@ -1660,9 +1587,7 @@ export default function SalesList() {
               </div>
 
               <div>
-                <label className="mb-1 block font-medium text-slate-600">
-                  Sale Quantity
-                </label>
+                <label className="mb-1 block font-medium text-slate-600">Sale Quantity</label>
                 <input
                   type="number"
                   name="saleQty"
@@ -1679,9 +1604,7 @@ export default function SalesList() {
               </div>
 
               <div>
-                <label className="mb-1 block font-medium text-slate-600">
-                  Current Stock
-                </label>
+                <label className="mb-1 block font-medium text-slate-600">Current Stock</label>
                 <input
                   type="number"
                   name="currentQty"
@@ -1692,9 +1615,7 @@ export default function SalesList() {
               </div>
 
               <div>
-                <label className="mb-1 block font-medium text-slate-600">
-                  Price
-                </label>
+                <label className="mb-1 block font-medium text-slate-600">Price</label>
                 <input
                   type="number"
                   name="price"
@@ -1712,9 +1633,7 @@ export default function SalesList() {
               </div>
 
               <div>
-                <label className="mb-1 block font-medium text-slate-600">
-                  Due Amount
-                </label>
+                <label className="mb-1 block font-medium text-slate-600">Due Amount</label>
                 <input
                   type="number"
                   name="dueAmount"
@@ -1745,9 +1664,7 @@ export default function SalesList() {
               </div>
 
               <div>
-                <label className="mb-1 block font-medium text-slate-600">
-                  Return Quantity*
-                </label>
+                <label className="mb-1 block font-medium text-slate-600">Return Quantity*</label>
                 <input
                   type="number"
                   name="returnQty"
@@ -1757,16 +1674,12 @@ export default function SalesList() {
                   required
                 />
                 {errors.returnQty && (
-                  <p className="mt-1 text-xs text-rose-500">
-                    {errors.returnQty}
-                  </p>
+                  <p className="mt-1 text-xs text-rose-500">{errors.returnQty}</p>
                 )}
               </div>
 
               <div>
-                <label className="mb-1 block font-medium text-slate-600">
-                  Return Amount*
-                </label>
+                <label className="mb-1 block font-medium text-slate-600">Return Amount*</label>
                 <input
                   type="text"
                   name="returnAmount"
@@ -1778,9 +1691,7 @@ export default function SalesList() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="mb-1 block font-medium text-slate-600">
-                  Return Remarks
-                </label>
+                <label className="mb-1 block font-medium text-slate-600">Return Remarks</label>
                 <input
                   name="returnRemarks"
                   value={formData.returnRemarks}
@@ -1797,18 +1708,11 @@ export default function SalesList() {
                     const selectedProduct =
                       returnModalSale.products[formData.selectedProductIndex];
                     const matchedStock = stockData.find(
-                      (stock) =>
-                        stock.product?.id === selectedProduct.product?.id
+                      (stock) => stock.product?.id === selectedProduct.product?.id
                     );
                     const alreadyReturnedQty = returnData
-                      .filter(
-                        (returnItem) =>
-                          returnItem.sale_product?.id === selectedProduct.id
-                      )
-                      .reduce(
-                        (sum, item) => sum + (parseFloat(item.quantity) || 0),
-                        0
-                      );
+                      .filter((returnItem) => returnItem.sale_product?.id === selectedProduct.id)
+                      .reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0);
                     const dueAmount = (
                       parseFloat(returnModalSale.total_payable_amount || 0) -
                       (returnModalSale.payments?.reduce(
@@ -1847,9 +1751,7 @@ export default function SalesList() {
             <div className="mt-4">
               <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
                 {returnData?.some((item) =>
-                  returnModalSale?.products?.some(
-                    (product) => product.id === item.sale_product?.id
-                  )
+                  returnModalSale?.products?.some((product) => product.id === item.sale_product?.id)
                 ) ? (
                   <table className="table table-zebra text-xs md:text-sm">
                     <thead className="bg-slate-800 text-xs text-white">
@@ -1866,37 +1768,29 @@ export default function SalesList() {
                     <tbody>
                       {returnData
                         .filter((item) =>
-                          returnModalSale?.products?.some(
-                            (product) => product.id === item.sale_product?.id
-                          )
+                          returnModalSale?.products?.some((product) => product.id === item.sale_product?.id)
                         )
                         .map((item, index) => (
                           <tr key={item.id}>
                             <td className="text-center">{index + 1}</td>
                             <td className="text-center">
                               {item.return_date
-                                ? new Date(item.return_date).toLocaleString(
-                                    "en-GB",
-                                    {
-                                      dateStyle: "short",
-                                    }
-                                  )
+                                ? new Date(item.return_date).toLocaleString("en-GB", {
+                                    dateStyle: "short",
+                                  })
                                 : "N/A"}
                             </td>
                             <td className="text-center">
-                              {item.sale_product?.product?.product_name ||
-                                "N/A"}
+                              {item.sale_product?.product?.product_name || "N/A"}
                             </td>
                             <td className="text-center">
-                              {item.sale_product?.product?.category_detail
-                                ?.company_detail?.company_name || "N/A"}
+                              {item.sale_product?.product?.category_detail?.company_detail?.company_name ||
+                                "N/A"}
                             </td>
                             <td className="text-center">
                               {item.sale_product?.sale_quantity || 0}
                             </td>
-                            <td className="text-center">
-                              {item.quantity || 0}
-                            </td>
+                            <td className="text-center">{item.quantity || 0}</td>
                             <td className="text-center">
                               {(
                                 parseFloat(item.sale_product?.sale_price || 0) *
