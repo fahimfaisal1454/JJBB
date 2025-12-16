@@ -24,16 +24,16 @@ class Product(models.Model):
 
 class StockProduct(models.Model):
     business_category = models.ForeignKey(BusinessCategory, on_delete=models.CASCADE,blank=True, null=True)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, unique=True)
 
-    purchase_quantity = models.PositiveIntegerField(default=0)
-    sale_quantity = models.PositiveIntegerField(default=0)
-    damage_quantity = models.PositiveIntegerField(default=0)
-    current_stock_quantity = models.PositiveIntegerField(default=0)
+    purchase_quantity = models.PositiveIntegerField(default=0,blank=True, null=True)
+    sale_quantity = models.PositiveIntegerField(default=0,blank=True, null=True)
+    damage_quantity = models.PositiveIntegerField(default=0, blank=True, null=True)
+    current_stock_quantity = models.PositiveIntegerField(default=0, blank=True, null=True)
 
-    purchase_price = models.DecimalField(max_digits=12, decimal_places=2)
-    sale_price = models.DecimalField(max_digits=12, decimal_places=2)
-    current_stock_value = models.DecimalField(max_digits=14, decimal_places=2)
+    purchase_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    sale_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    current_stock_value = models.DecimalField(max_digits=14, decimal_places=2,blank=True, null=True)
 
     net_weight = models.CharField(max_length=250, blank=True, null=True)
     manufacture_date = models.DateField(blank=True, null=True)

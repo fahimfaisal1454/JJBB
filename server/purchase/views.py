@@ -10,6 +10,7 @@ import pandas as pd
 from django.db import transaction
 from rest_framework.response import Response
 from decimal import Decimal, InvalidOperation
+from rest_framework import status
 
 
 
@@ -119,7 +120,6 @@ class PurchasePaymentViewSet(viewsets.ModelViewSet):
 
 
 def create_purchase_entry(data):
-    # 1. Get Product
     try:
         product = Product.objects.get(product_name=data["product"].product_name)
     except Product.DoesNotExist:
@@ -296,7 +296,7 @@ class UploadStockExcelView(APIView):
                 try:
                     product, created = Product.objects.get_or_create(
                         product_name=product_name,
-                        business_category= business_category,
+                        business_category = business_category,
                         defaults={
                             "product_code": product_code,
                             "price": purchase_price,

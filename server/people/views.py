@@ -30,10 +30,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
 class VendorViewSet(viewsets.ModelViewSet):
     queryset = Vendor.objects.all().order_by("-created_at")
     serializer_class = VendorSerializer
-
-    parser_classes = [MultiPartParser, FormParser, JSONParser]
-
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    
     search_fields = [
         "vendor_name",
         "phone1",
