@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useUser } from "../../Provider/UserProvider";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import logo from "../../assets/joyjatra_logo.jpeg";
 
 const HomeNavbar = () => {
   const { user, signOut } = useUser();
@@ -81,9 +82,15 @@ const HomeNavbar = () => {
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 sm:py-4">
         {/* Logo / Brand */}
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-300 text-slate-950 font-bold shadow-[0_0_24px_rgba(16,185,129,0.55)]">
-            JJ
+          <div className="flex h-15 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.55)]">
+            <img
+              src={logo}
+              alt="JoyJatra Logo"
+              className="h-15 w-15 object-cover rounded-full"
+            />
           </div>
+
+
           <div className="leading-tight">
             <h1 className="text-lg sm:text-xl md:text-2xl font-semibold tracking-tight">
               JoyJatra bBook

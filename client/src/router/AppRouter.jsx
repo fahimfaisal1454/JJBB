@@ -1,5 +1,6 @@
 // src/router/AppRouter.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import Layout from "../components/layout/Layout";
 import Root from "../components/Root/Root";
 
@@ -88,6 +89,16 @@ import StaffList from "../pages/Staffs/StaffList";
 
 
 export default function AppRouter() {
+
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
+  useEffect(() => {
+    const category = JSON.parse(localStorage.getItem("business_category"));
+    setSelectedCategory(category);
+  }, []);
+
+  const isHandiCraft = selectedCategory?.name === "Handi Craft";
+
   return (
     <Routes>
 
@@ -121,13 +132,17 @@ export default function AppRouter() {
         <Route path="/sales/customers" element={<Customers />} />
         <Route path="/sales/products-services" element={<CustomerProductSale />} />
 
-        {/* Purchases */}
-        <Route path="/purchases/bills" element={<Bills />} />
-        <Route path="/purchases/vendors" element={<Vendors />} />
-        <Route path="/purchases/products-services" element={<ProductsServicesPurchases />} />
-        <Route path="/purchases/invoices" element={<PurchaseInvoices />} />
-        <Route path="/purchases/payments" element={<PurchasePayments />} />
-        <Route path="/purchases/purchase-entry" element={<PurchaseEntry />} />
+        {/* Purchases - Only if not Handy Craft */}
+        {!isHandiCraft && (
+          <>
+            <Route path="/purchases/bills" element={<Bills />} />
+            <Route path="/purchases/vendors" element={<Vendors />} />
+            <Route path="/purchases/products-services" element={<ProductsServicesPurchases />} />
+            <Route path="/purchases/invoices" element={<PurchaseInvoices />} />
+            <Route path="/purchases/payments" element={<PurchasePayments />} />
+            <Route path="/purchases/purchase-entry" element={<PurchaseEntry />} />
+          </>
+        )}
 
 
         {/* Accounting */}

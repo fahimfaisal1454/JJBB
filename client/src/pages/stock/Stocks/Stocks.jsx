@@ -4,6 +4,8 @@ import AxiosInstance from "../../../components/AxiosInstance";
 import toast from "react-hot-toast";
 import DamageModal from "./DamageModal";
 import EditModal from "./EditModal";
+import AddModal from "./AddModal";
+
 
 // Recharts imports for expired-products chart
 import {
@@ -20,6 +22,7 @@ export default function Stocks() {
   const [loading, setLoading] = useState(true);
   const [selectedStock, setSelectedStock] = useState(null);
   const [selectedEditStock, setSelectedEditStock] = useState(null);
+  const [AddStockModal, setAddStockModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
@@ -390,6 +393,13 @@ export default function Stocks() {
 
           {/* Export buttons */}
           <div className="flex gap-2">
+             <button
+              type="button"
+              onClick={() => setAddStockModal(true)}
+              className="px-3 py-1.5 text-sm rounded-lg border border-emerald-500 text-emerald-700 hover:bg-emerald-50"
+            >
+              Add new Stock
+            </button>
             <button
               type="button"
               onClick={handleExportExcel}
@@ -504,6 +514,15 @@ export default function Stocks() {
         <EditModal
           stock={selectedEditStock}
           onClose={() => setSelectedEditStock(null)}
+          onUpdated={updateItem}
+        />
+      )}
+
+
+      {AddStockModal && (
+        <AddModal
+          business_category={selectedCategory.id}
+          onClose={() => setAddStockModal(false)}
           onUpdated={updateItem}
         />
       )}

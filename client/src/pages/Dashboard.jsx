@@ -32,6 +32,9 @@ export default function Dashboard() {
     JSON.parse(localStorage.getItem("business_category")) || null
   );
 
+
+  console.log("Dashboard business Category", selectedCategory)
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {

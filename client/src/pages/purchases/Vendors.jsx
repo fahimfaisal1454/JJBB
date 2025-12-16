@@ -200,11 +200,9 @@ export default function Vendors() {
 
     try {
       if (editingId) {
-        await AxiosInstance.patch(`${API_URL}${editingId}/`, formData);
+        await AxiosInstance.patch(`vendors/${editingId}/`, formData);
       } else {
-        await AxiosInstance.post(API_URL, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        await AxiosInstance.post("vendors/", formData);
       }
 
       resetFormState();
@@ -266,7 +264,7 @@ export default function Vendors() {
       return;
     }
     try {
-      await AxiosInstance.delete(`${API_URL}${id}/`);
+      await AxiosInstance.delete(`vendors/${id}/`);
       setVendors((prev) => prev.filter((v) => v.id !== id));
     } catch (err) {
       console.error(err);
@@ -640,13 +638,12 @@ export default function Vendors() {
                     </div>
                     <div>
                       <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
-                        Phone 1 *
+                        Phone 1
                       </label>
                       <input
                         name="phone1"
                         value={form.phone1}
                         onChange={handleFormChange}
-                        required
                         className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-[11px] focus:outline-none focus:ring focus:ring-blue-500/30 bg-slate-50"
                       />
                     </div>

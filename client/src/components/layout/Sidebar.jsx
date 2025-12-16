@@ -1,130 +1,136 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useState, useMemo } from "react";
-
-const menuConfig = [
-  {
-    title: "Dashboard",
-    icon: "📊",
-    items: [{ label: "Overview", path: "/dashboard" }],
-  },
-  {
-    title: "Sales",
-    icon: "💰",
-    items: [
-      // { label: "Estimates", path: "/sales/estimates" },
-      { label: "Customers", path: "/sales/customers" },
-
-      { label: "Products & Services", path: "/sales/products-services" },
-      // { label: "Recurring Invoices", path: "/sales/recurring-invoices" },
-      // { label: "Checkouts", path: "/sales/checkouts" },
-      { label: "Payments", path: "/sales/payments" },
-      { label: "Invoices", path: "/sales/invoices" },
-      { label: "Customer Statements", path: "/sales/customer-statements" },
-    ],
-  },
-  
-  {
-    title: "Purchases",
-    icon: "🧾",
-    items: [
-      { label: "Vendors", path: "/purchases/vendors" },
-      { label: "Products & Services", path: "/purchases/products-services" },
-      { label: "Invoice", path: "/purchases/invoices" },
-      { label: "Payments", path: "/purchases/payments" },
-      { label: "Bills", path: "/purchases/bills" },
-      { label: "Purchase Entry", path: "/purchases/purchase-entry" },
-    ],
-  },
-
-  {
-    title: "Accounting",
-    icon: "📚",
-    items: [
-      { label: "Accounts", path: "/accounting/accounts" },
-      { label: "Manual Journals", path: "/accounting/manual-journals" },
-      { label: "Bulk Updates", path: "/accounting/bulk-updates" },
-      { label: "Currency Adjustments", path: "/accounting/currency-adjustments" },
-      { label: "Chart of Accounts", path: "/accounting/chart-of-accounts" },
-      { label: "Budget", path: "/accounting/budget" },
-      { label: "Transaction Locking", path: "/accounting/transaction-locking" },
-      { label: "Petty Cash", path: "/accounting/petty-cash" },
-      { label: "Cash Reconciliation", path: "/accounting/cash-reconciliation" },
-      { label: "Bank Reconciliation", path: "/accounting/bank-reconciliation" },
-      { label: "Bank Transaction", path: "/accounting/bank-transactions" },  
-      { label: "Bank Statement", path: "/accounting/bank-statement" },
-    ],
-  },
-  {
-    title: "Stock",
-    icon: "📦",
-    items: [
-      { label: "Inventory", path: "/dashboard/stocks" },
-      { label: "Products", path: "/dashboard/products" },
-    ],
-  },
-  {
-    title: "Expenses",
-    icon: (
-      <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-800/80 text-slate-100">
-        ৳
-      </span>
-    ),
-    basePath: "/expenses",
-    items: [
-      { label: "General Expense", path: "/expenses" },
-      { label: "Salary Expense", path: "/expenses/salary" },
-      { label: "Purchase Expense", path: "/expenses/purchase" },
-      { label: "Expense Report", path: "/expenses/report" },
-    ],
-  },
-  {
-    title: "Assets",
-    icon: "🏢",
-    items: [{ label: "Assets", path: "/assets" }],
-  },
-  {
-    title: "Reports",
-    icon: "📑",
-    items: [{ label: "Reports Home", path: "/reports" }],
-  },
-  {
-    title: "Master",
-    icon: "",
-    items: [
-      { label: "Business Category", path: "/master/business-category" },
-      { label: "Cost Category", path: "/master/cost-category" },
-      { label: "Income Sources", path: "/master/income-sources" },
-      { label: "Product Category", path: "/master/product-category" },
-      { label: "Payment Mode", path: "/master/payment-mode" },
-      { label: "Bank Account", path: "/master/bank-account" },
-      { label: "Account Category", path: "/master/account-category" },
-      { label: "Bank Category", path: "/master/bank-category" },
-      { label: "Bank", path: "/master/bank" },
-      { label: "Divisions", path: "/master/divisions" },
-      { label: "Districts", path: "/master/districts" },
-      { label: "Supplier Type", path: "/master/supplier-type" },
-    ],
-  },
-  {
-    title: "Staffs",
-    icon: "",
-    items: [
-      { label: "Staffs", path: "/dashboard/staff-list" },
-      { label: "Add Staff", path: "/dashboard/add-staff" },
-    ],
-  },
-];
+import logo from "../../assets/joyjatra_logo.jpeg";
 
 export default function Sidebar() {
   const location = useLocation();
+  const [selectedCategory, setSelectedCategory] = useState(
+    JSON.parse(localStorage.getItem("business_category")) || null
+  );
 
-  // auto-open the section that matches current path
+  // Base menu without Purchases
+  const baseMenu = [
+    {
+      title: "Dashboard",
+      icon: "📊",
+      items: [{ label: "Overview", path: "/dashboard" }],
+    },
+    {
+      title: "Sales",
+      icon: "💰",
+      items: [
+        { label: "Customers", path: "/sales/customers" },
+        { label: "Products & Services", path: "/sales/products-services" },
+        { label: "Payments", path: "/sales/payments" },
+        { label: "Invoices", path: "/sales/invoices" },
+        { label: "Customer Statements", path: "/sales/customer-statements" },
+      ],
+    },
+    {
+      title: "Accounting",
+      icon: "📚",
+      items: [
+        { label: "Accounts", path: "/accounting/accounts" },
+        { label: "Manual Journals", path: "/accounting/manual-journals" },
+        { label: "Bulk Updates", path: "/accounting/bulk-updates" },
+        { label: "Currency Adjustments", path: "/accounting/currency-adjustments" },
+        { label: "Chart of Accounts", path: "/accounting/chart-of-accounts" },
+        { label: "Budget", path: "/accounting/budget" },
+        { label: "Transaction Locking", path: "/accounting/transaction-locking" },
+        { label: "Petty Cash", path: "/accounting/petty-cash" },
+        { label: "Cash Reconciliation", path: "/accounting/cash-reconciliation" },
+        { label: "Bank Reconciliation", path: "/accounting/bank-reconciliation" },
+        { label: "Bank Transaction", path: "/accounting/bank-transactions" },
+        { label: "Bank Statement", path: "/accounting/bank-statement" },
+      ],
+    },
+    {
+      title: "Stock",
+      icon: "📦",
+      items: [
+        { label: "Inventory", path: "/dashboard/stocks" },
+        { label: "Products", path: "/dashboard/products" },
+      ],
+    },
+    {
+      title: "Expenses",
+      icon: (
+        <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-800/80 text-slate-100">
+          ৳
+        </span>
+      ),
+      items: [
+        { label: "General Expense", path: "/expenses" },
+        { label: "Salary Expense", path: "/expenses/salary" },
+        { label: "Purchase Expense", path: "/expenses/purchase" },
+        { label: "Expense Report", path: "/expenses/report" },
+      ],
+    },
+    {
+      title: "Assets",
+      icon: "🏢",
+      items: [{ label: "Assets", path: "/assets" }],
+    },
+    {
+      title: "Reports",
+      icon: "📑",
+      items: [{ label: "Reports Home", path: "/reports" }],
+    },
+    {
+      title: "Master",
+      icon: "",
+      items: [
+        { label: "Business Category", path: "/master/business-category" },
+        { label: "Cost Category", path: "/master/cost-category" },
+        { label: "Income Sources", path: "/master/income-sources" },
+        { label: "Product Category", path: "/master/product-category" },
+        { label: "Payment Mode", path: "/master/payment-mode" },
+        { label: "Bank Account", path: "/master/bank-account" },
+        { label: "Account Category", path: "/master/account-category" },
+        { label: "Bank Category", path: "/master/bank-category" },
+        { label: "Bank", path: "/master/bank" },
+        { label: "Divisions", path: "/master/divisions" },
+        { label: "Districts", path: "/master/districts" },
+        { label: "Supplier Type", path: "/master/supplier-type" },
+      ],
+    },
+    {
+      title: "Staffs",
+      icon: "",
+      items: [
+        { label: "Staffs", path: "/dashboard/staff-list" },
+        { label: "Add Staff", path: "/dashboard/add-staff" },
+      ],
+    },
+  ];
+
+  // Dynamically add Purchases if category is not "Handi Craft"
+  const menuConfig = useMemo(() => {
+    const menu = [...baseMenu];
+    if (selectedCategory?.name !== "Handi Craft") {
+      menu.splice(2, 0, { // Insert after Sales
+        title: "Purchases",
+        icon: "🧾",
+        items: [
+          { label: "Vendors", path: "/purchases/vendors" },
+          { label: "Products & Services", path: "/purchases/products-services" },
+          { label: "Invoice", path: "/purchases/invoices" },
+          { label: "Payments", path: "/purchases/payments" },
+          { label: "Bills", path: "/purchases/bills" },
+          { label: "Purchase Entry", path: "/purchases/purchase-entry" },
+        ],
+      });
+    }
+    return menu;
+  }, [selectedCategory]);
+
+  // Auto-open the section that matches current path
   const initialOpen = useMemo(() => {
     const section = menuConfig.find((sec) =>
       sec.items.some((item) => location.pathname.startsWith(item.path))
     );
     return section ? section.title : "Dashboard";
-  }, [location.pathname]);
+  }, [location.pathname, menuConfig]);
 
   const [openSection, setOpenSection] = useState(initialOpen);
 
@@ -136,9 +142,14 @@ export default function Sidebar() {
     <aside className="w-64 bg-slate-950 text-slate-100 h-screen sticky top-0 flex flex-col border-r border-slate-800">
       {/* Brand */}
       <div className="p-4 border-b border-slate-800 flex items-center gap-2">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-emerald-400 flex items-center justify-center text-lg font-bold">
-          b
+        <div className="flex h-15 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.55)]">
+          <img
+            src={logo}
+            alt="JoyJatra Logo"
+            className="h-15 w-15 object-cover rounded-full"
+          />
         </div>
+
         <div>
           <h1 className="text-lg font-semibold tracking-tight">bBOOK</h1>
           <p className="text-[11px] text-slate-400">Cloud Accounting</p>

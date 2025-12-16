@@ -11,6 +11,7 @@ export default function Products() {
   );
 
 
+
   const getProducts = async () => {
     try {
       const res = await AxiosInstance.get(`products/?business_category=${selectedCategory.id}`);
@@ -21,8 +22,11 @@ export default function Products() {
   };
 
   useEffect(() => {
+    
+    if (!selectedCategory) return;
     getProducts();
-  }, []);
+
+  }, [selectedCategory]);
 
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this product?")) return;
