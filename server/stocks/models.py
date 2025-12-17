@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.timezone import now
 from django.utils.text import slugify
-from master.models import BusinessCategory
+from master.models import BusinessCategory, InventoryCategory
 
 
 
@@ -29,6 +29,7 @@ class StockProduct(models.Model):
         on_delete=models.CASCADE,
         related_name="stock"
     )
+    inventory_category = models.ForeignKey(InventoryCategory,on_delete=models.CASCADE,blank=True,null=True)
     purchase_quantity = models.PositiveIntegerField(default=0,blank=True, null=True)
     sale_quantity = models.PositiveIntegerField(default=0,blank=True, null=True)
     damage_quantity = models.PositiveIntegerField(default=0, blank=True, null=True)
