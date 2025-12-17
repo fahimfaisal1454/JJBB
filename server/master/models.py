@@ -7,6 +7,19 @@ from decimal import Decimal
 class BusinessCategory(models.Model):
     name = models.CharField(max_length=100)
 
+    # ✅ Dynamic banner fields (per business)
+    # banner_top_tag = models.CharField(max_length=100, blank=True, default="")     # e.g. "ক্যাশ মেমো"
+    banner_title = models.CharField(max_length=255, blank=True, default="")      # e.g. "জয়যাত্রা ফুড কর্ণার"
+    banner_address1 = models.CharField(max_length=255, blank=True, default="")
+    banner_address2 = models.CharField(max_length=255, blank=True, default="")
+    banner_phone = models.CharField(max_length=50, blank=True, default="")
+
+    # optional (recommended later): logo per business
+    # banner_logo = models.ImageField(upload_to="business_logos/", blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
 
 class CostCategory(models.Model):
     category_name = models.CharField(max_length=255, unique=True)
