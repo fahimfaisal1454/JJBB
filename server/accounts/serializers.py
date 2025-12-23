@@ -5,6 +5,7 @@ from .models import Account, JournalEntry, JournalEntryLine
 
 
 class AccountSerializer(serializers.ModelSerializer):
+    parent_name = serializers.CharField(source="parent.name", read_only=True)
     class Meta:
         model = Account
         fields = "__all__"

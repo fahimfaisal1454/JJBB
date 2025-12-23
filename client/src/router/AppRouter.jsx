@@ -36,14 +36,10 @@ import OrderList from "../pages/purchases/Product Order/OrderList";
 
 // Accounting
 import Account from "../pages/accounting/Account";
-import ManualJournals from "../pages/accounting/ManualJournals";
-import BulkUpdates from "../pages/accounting/BulkUpdates";
-import CurrencyAdjustments from "../pages/accounting/CurrencyAdjustments";
-import ChartOfAccounts from "../pages/accounting/ChartOfAccounts";
-import Budget from "../pages/accounting/Budget";
-import TransactionLocking from "../pages/accounting/TransactionLocking";
-import PettyCash from "../pages/accounting/PettyCash";
-import CashReconciliation from "../pages/accounting/CashReconciliation";
+import ManualJournal from "../pages/accounting/ManualJournal";
+import JournalList from "../pages/accounting/JournalList";
+import ChartOfAccounts from "../pages/accounting/ChartOfAccount/ChartOfAccounts";
+import AccountForm from "../pages/accounting/ChartOfAccount/AccountForm";
 import BankReconciliation from "../pages/accounting/BankReconciliation";
 import BankTransactions from "../pages/accounting/BankTransactions";
 import BankStatement from "../pages/accounting/BankStatement";
@@ -158,13 +154,10 @@ export default function AppRouter() {
 
         {/* Accounting */}
         <Route path="/accounting/accounts" element={<Account />} />
-        <Route path="/accounting/bulk-updates" element={<BulkUpdates />} />
-        <Route path="/accounting/currency-adjustments" element={<CurrencyAdjustments />} />
         <Route path="/accounting/chart-of-accounts" element={<ChartOfAccounts />} />
-        <Route path="/accounting/budget" element={<Budget />} />
-        <Route path="/accounting/transaction-locking" element={<TransactionLocking />} />
-        <Route path="/accounting/petty-cash" element={<PettyCash />} />
-        <Route path="/accounting/cash-reconciliation" element={<CashReconciliation />} />
+        <Route path="/accounting/chart-of-accounts/new" element={<AccountForm />} />
+        <Route path="/accounting/manual-journals" element={<ManualJournal />} />
+        <Route path="/accounting/journal-list" element={<JournalList />} />
         <Route path="/accounting/bank-reconciliation" element={<BankReconciliation/>} />
         <Route path="/accounting/bank-transactions"element={<BankTransactions />}/>
         <Route path="/accounting/bank-statement" element={<BankStatement />} />

@@ -32,12 +32,7 @@ export default function Sidebar() {
       items: [
         { label: "Accounts", path: "/accounting/accounts" },
         { label: "Manual Journals", path: "/accounting/manual-journals" },
-        { label: "Bulk Updates", path: "/accounting/bulk-updates" },
-        { label: "Currency Adjustments", path: "/accounting/currency-adjustments" },
         { label: "Chart of Accounts", path: "/accounting/chart-of-accounts" },
-        { label: "Budget", path: "/accounting/budget" },
-        { label: "Transaction Locking", path: "/accounting/transaction-locking" },
-        { label: "Petty Cash", path: "/accounting/petty-cash" },
         { label: "Cash Reconciliation", path: "/accounting/cash-reconciliation" },
         { label: "Bank Reconciliation", path: "/accounting/bank-reconciliation" },
         { label: "Bank Transaction", path: "/accounting/bank-transactions" },
