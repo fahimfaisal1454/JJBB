@@ -211,14 +211,15 @@ class AssetSerializer(serializers.ModelSerializer):
             "code",
             "purchase_date",
             "total_qty",
+            "unit_price",
+            "total_price",
+            "usable_qty",
             "damaged_qty",
             "created_at",
         ]
         
         
-        
-        
-        
+    
         
 class RequisitionSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.product_name", read_only=True)

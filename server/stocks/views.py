@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from .models import *
 from .serializers import *
 from rest_framework.decorators import action
+from django.db import IntegrityError, transaction
+from decimal import Decimal
 
 
 # ----------------------------
@@ -193,14 +195,17 @@ class StockViewSet(viewsets.ModelViewSet):
 
 
 
+
+
+
 class AssetViewSet(viewsets.ModelViewSet):
     queryset = Asset.objects.all().order_by("-id")
     serializer_class = AssetSerializer
 
     def get_queryset(self):
         qs = super().get_queryset()
-
         business_category = self.request.query_params.get("business_category")
+
         if business_category:
             try:
                 qs = qs.filter(business_category_id=int(business_category))
@@ -208,6 +213,54 @@ class AssetViewSet(viewsets.ModelViewSet):
                 qs = qs.none()
 
         return qs
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+       
+        name = request.data.get("name")
+        business_category = request.data.get("business_category")
+        qty = int(request.data.get("total_qty", 0))
+        unit_price = request.data.get("unit_price")
+        unit_price = Decimal(unit_price) if unit_price not in ("", None) else None
+
+        if not name or not business_category:
+            return Response(
+                {"detail": "name and business_category are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            asset = Asset.objects.select_for_update().get(
+                name=name,
+                business_category_id=business_category,
+            )
+
+
+            # ✅ Update existing asset
+            if qty:
+               asset.total_qty += qty
+              
+            if unit_price is not None:
+                asset.unit_price = unit_price
+             
+            asset.save()
+
+            serializer = self.get_serializer(asset)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Asset.DoesNotExist:
+            # ✅ Create new asset
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+
+            asset = serializer.save()
+
+            return Response(
+                AssetSerializer(asset).data,
+                status=status.HTTP_201_CREATED,
+            )
+
+
     
 
 

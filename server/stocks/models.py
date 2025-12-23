@@ -3,6 +3,9 @@ from django.utils import timezone
 from django.utils.timezone import now
 from django.utils.text import slugify
 from master.models import BusinessCategory, InventoryCategory
+from decimal import Decimal
+from django.core.exceptions import ValidationError
+
 
 
 
@@ -84,8 +87,28 @@ class Asset(models.Model):
     code = models.CharField(max_length=100, blank=True, null=True)
     purchase_date = models.DateField()
     total_qty = models.PositiveIntegerField(default=0)
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2,blank=True, null=True)
+    total_price = models.DecimalField(max_digits=14, decimal_places=2, blank=True, null=True)
     damaged_qty = models.PositiveIntegerField(default=0)
+    usable_qty = models.PositiveIntegerField(default=0, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+    def save(self, *args, **kwargs):
+        if self.damaged_qty > self.total_qty:
+            raise ValidationError(
+                "Damaged quantity cannot be greater than total quantity."
+            )
+
+        # ✅ Auto-calculate usable quantity
+        self.usable_qty = self.total_qty - self.damaged_qty
+
+        if self.unit_price is not None:
+            self.total_price = Decimal(self.total_qty) * self.unit_price
+        else:
+            self.total_price = Decimal(0)
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name} ({self.code})"
