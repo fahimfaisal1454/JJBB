@@ -18,6 +18,7 @@ class JournalEntryLineSerializer(serializers.ModelSerializer):
         queryset=Account.objects.all(), source="account"
     )
     account_name = serializers.CharField(source="account.name", read_only=True)
+    account_code = serializers.CharField(source="account.code", read_only=True)
 
     class Meta:
         model = JournalEntryLine
@@ -25,6 +26,7 @@ class JournalEntryLineSerializer(serializers.ModelSerializer):
             "id",
             "account_id",
             "account_name",
+            "account_code",
             "debit",
             "credit",
             "description",

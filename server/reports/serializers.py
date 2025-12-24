@@ -21,3 +21,22 @@ class CombinedExpenseSerializer(serializers.Serializer):
     amount = serializers.DecimalField(max_digits=12, decimal_places=2)
     description = serializers.CharField()
     transaction_type = serializers.CharField()
+
+
+
+
+class ProfitLossItemSerializer(serializers.Serializer):
+    item = serializers.CharField()
+    current_year = serializers.DecimalField(max_digits=14, decimal_places=2)
+    previous_year = serializers.DecimalField(max_digits=14, decimal_places=2)
+    percent_change = serializers.DecimalField(max_digits=6, decimal_places=2)
+
+
+
+class ProfitLossSerializer(serializers.Serializer):
+    year = serializers.IntegerField()
+    income = ProfitLossItemSerializer(many=True)
+    expenses = ProfitLossItemSerializer(many=True)
+    gross_profit = ProfitLossItemSerializer()
+    total_expenses = ProfitLossItemSerializer()
+    net_profit = ProfitLossItemSerializer()

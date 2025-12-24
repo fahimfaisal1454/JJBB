@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import AxiosInstance from "../../components/AxiosInstance";
+import { useNavigate } from "react-router-dom";
+
 
 export default function JournalList() {
   const [journals, setJournals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
 
   const fetchJournals = async () => {
     try {
@@ -40,6 +44,7 @@ export default function JournalList() {
               <th className="px-4 py-3">Description</th>
               <th className="px-4 py-3 text-right">Total Debit</th>
               <th className="px-4 py-3 text-right">Total Credit</th>
+              <th className="px-4 py-3 text-center">voucher</th>
             </tr>
           </thead>
 
@@ -62,6 +67,16 @@ export default function JournalList() {
                 </td>
                 <td className="px-4 py-2 text-right">
                   {j.total_credit.toFixed(2)}
+                </td>
+                <td className="px-4 py-2 text-center">
+                  <button
+                    onClick={() =>
+                      navigate(`/accounting/journal-voucher/${j.id}`)
+                    }
+                    className="text-blue-600 hover:underline"
+                  >
+                    View
+                  </button>
                 </td>
               </tr>
             ))}

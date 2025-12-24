@@ -1,10 +1,25 @@
+import { Link } from "react-router-dom";
+
 export default function ReportsHome() {
   const reports = [
-    { name: "Profit & Loss", category: "Financial", description: "Income, expenses and net profit for a period." },
-    { name: "Balance Sheet", category: "Financial", description: "Assets, liabilities and equity snapshot." },
-    { name: "A/R Aging", category: "Sales", description: "Outstanding customer balances by aging buckets." },
-    { name: "A/P Aging", category: "Purchases", description: "Outstanding vendor balances by aging buckets." },
-    { name: "Inventory Valuation", category: "Stock", description: "Stock quantities and values by product." },
+    {
+      name: "Profit & Loss",
+      category: "Financial",
+      description: "Income, expenses and net profit for a period.",
+      path: "/reports/profit-loss",
+    },
+    {
+      name: "Balance Sheet",
+      category: "Financial",
+      description: "Assets, liabilities and equity snapshot.",
+      path: null,
+    },
+    {
+      name: "Inventory Valuation",
+      category: "Stock",
+      description: "Stock quantities and values by product.",
+      path: null,
+    },
   ];
 
   return (
@@ -51,10 +66,24 @@ export default function ReportsHome() {
               <h2 className="text-sm font-semibold mb-1">{r.name}</h2>
               <p className="text-xs text-slate-500">{r.description}</p>
             </div>
+
             <div className="mt-4 flex justify-between items-center">
-              <button className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs hover:bg-blue-700">
-                View Report
-              </button>
+              {r.path ? (
+                <Link
+                  to={r.path}
+                  className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs hover:bg-blue-700"
+                >
+                  View Report
+                </Link>
+              ) : (
+                <button
+                  disabled
+                  className="px-3 py-1.5 rounded-lg bg-slate-300 text-white text-xs cursor-not-allowed"
+                >
+                  Coming Soon
+                </button>
+              )}
+
               <button className="text-[11px] text-slate-500 hover:text-blue-600">
                 Customize
               </button>

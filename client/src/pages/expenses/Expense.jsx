@@ -170,6 +170,7 @@ export default function ExpensePage() {
     }
 
     const payload = {
+      business_category:selectedCategory.id,
       cost_category: form.cost_category,
       amount: form.amount,
       expense_date: form.expense_date,

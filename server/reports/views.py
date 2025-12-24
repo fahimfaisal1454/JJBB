@@ -8,6 +8,10 @@ from django.db.models import Sum, Q
 from sales.models import Sale
 from sales.serializers import SaleSerializer
 from purchase.models import Expense, SalaryExpense, Purchase
+from datetime import date
+from accounts.models import JournalEntryLine
+from .serializers import ProfitLossSerializer
+from .utils import percent_change
 
 
 
@@ -236,3 +240,177 @@ class CombinedExpanseView(APIView):
         grouped_data.sort(key=lambda x: x["date"], reverse=True)
 
         return Response(grouped_data)
+
+
+
+
+
+
+class ProfitLossReportView(APIView):
+    def get(self, request):
+
+        # ==========================
+        # YEAR HANDLING
+        # ==========================
+        year = int(request.query_params.get("year", date.today().year))
+        prev_year = year - 1
+
+        start = date(year, 1, 1)
+        end = date(year, 12, 31)
+        prev_start = date(prev_year, 1, 1)
+        prev_end = date(prev_year, 12, 31)
+
+        # ==========================
+        # INCOME
+        # ==========================
+        sales_current = Sale.objects.filter(
+            sale_date__range=(start, end)
+        ).aggregate(total=Sum("total_amount"))["total"] or Decimal("0")
+
+        sales_prev = Sale.objects.filter(
+            sale_date__range=(prev_start, prev_end)
+        ).aggregate(total=Sum("total_amount"))["total"] or Decimal("0")
+
+        other_income_current = JournalEntryLine.objects.filter(
+            journal_entry__date__range=(start, end),
+            account__account_type="INCOME"
+        ).aggregate(total=Sum("credit"))["total"] or Decimal("0")
+
+        other_income_prev = JournalEntryLine.objects.filter(
+            journal_entry__date__range=(prev_start, prev_end),
+            account__account_type="INCOME"
+        ).aggregate(total=Sum("credit"))["total"] or Decimal("0")
+
+        total_income_current = sales_current + other_income_current
+        total_income_prev = sales_prev + other_income_prev
+
+        # ==========================
+        # EXPENSES (CATEGORY WISE)
+        # ==========================
+        expense_current_qs = (
+            Expense.objects.filter(expense_date__range=(start, end))
+            .values("cost_category__category_name")
+            .annotate(total=Sum("amount"))
+        )
+
+        expense_prev_qs = (
+            Expense.objects.filter(expense_date__range=(prev_start, prev_end))
+            .values("cost_category__category_name")
+            .annotate(total=Sum("amount"))
+        )
+
+        prev_map = {
+            e["cost_category__category_name"]: e["total"]
+            for e in expense_prev_qs
+        }
+
+        expense_rows = []
+        total_expense_current = Decimal("0")
+        total_expense_prev = Decimal("0")
+
+        for row in expense_current_qs:
+            name = row["cost_category__category_name"]
+            current_total = row["total"] or Decimal("0")
+            prev_total = prev_map.get(name, Decimal("0"))
+
+            expense_rows.append({
+                "item": name,
+                "current_year": current_total,
+                "previous_year": prev_total,
+                "percent_change": percent_change(current_total, prev_total),
+            })
+
+            total_expense_current += current_total
+            total_expense_prev += prev_total
+
+        # ==========================
+        # SALARY EXPENSE
+        # ==========================
+        salary_current = SalaryExpense.objects.filter(
+            created_at__date__range=(start, end)
+        ).aggregate(total=Sum("base_amount"))["total"] or Decimal("0")
+
+        salary_prev = SalaryExpense.objects.filter(
+            created_at__date__range=(prev_start, prev_end)
+        ).aggregate(total=Sum("base_amount"))["total"] or Decimal("0")
+
+        expense_rows.append({
+            "item": "Salary Expense",
+            "current_year": salary_current,
+            "previous_year": salary_prev,
+            "percent_change": percent_change(salary_current, salary_prev),
+        })
+
+        total_expense_current += salary_current
+        total_expense_prev += salary_prev
+
+        # ==========================
+        # JOURNAL EXPENSE
+        # ==========================
+        journal_exp_current = JournalEntryLine.objects.filter(
+            journal_entry__date__range=(start, end),
+            account__account_type="EXPENSE"
+        ).aggregate(total=Sum("debit"))["total"] or Decimal("0")
+
+        journal_exp_prev = JournalEntryLine.objects.filter(
+            journal_entry__date__range=(prev_start, prev_end),
+            account__account_type="EXPENSE"
+        ).aggregate(total=Sum("debit"))["total"] or Decimal("0")
+
+        expense_rows.append({
+            "item": "Journal Expenses",
+            "current_year": journal_exp_current,
+            "previous_year": journal_exp_prev,
+            "percent_change": percent_change(journal_exp_current, journal_exp_prev),
+        })
+
+        total_expense_current += journal_exp_current
+        total_expense_prev += journal_exp_prev
+
+        # ==========================
+        # PROFIT
+        # ==========================
+        net_profit_current = total_income_current - total_expense_current
+        net_profit_prev = total_income_prev - total_expense_prev
+
+        # ==========================
+        # RESPONSE
+        # ==========================
+        data = {
+            "year": year,
+            "income": [
+                {
+                    "item": "Sales",
+                    "current_year": sales_current,
+                    "previous_year": sales_prev,
+                    "percent_change": percent_change(sales_current, sales_prev),
+                },
+                {
+                    "item": "Other Income",
+                    "current_year": other_income_current,
+                    "previous_year": other_income_prev,
+                    "percent_change": percent_change(other_income_current, other_income_prev),
+                },
+            ],
+            "expenses": expense_rows,
+            "gross_profit": {
+                "item": "Gross Profit",
+                "current_year": total_income_current,
+                "previous_year": total_income_prev,
+                "percent_change": percent_change(total_income_current, total_income_prev),
+            },
+            "total_expenses": {
+                "item": "Total Expenses",
+                "current_year": total_expense_current,
+                "previous_year": total_expense_prev,
+                "percent_change": percent_change(total_expense_current, total_expense_prev),
+            },
+            "net_profit": {
+                "item": "Profit / Loss",
+                "current_year": net_profit_current,
+                "previous_year": net_profit_prev,
+                "percent_change": percent_change(net_profit_current, net_profit_prev),
+            },
+        }
+
+        return Response(data)

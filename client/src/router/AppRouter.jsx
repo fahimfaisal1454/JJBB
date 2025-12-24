@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Layout from "../components/layout/Layout";
 import Root from "../components/Root/Root";
 
+
 // Home
 import Home from "../pages/Home/Home";
 import Login from "../pages/Auth/Login";
@@ -38,6 +39,7 @@ import OrderList from "../pages/purchases/Product Order/OrderList";
 import Account from "../pages/accounting/Account";
 import ManualJournal from "../pages/accounting/ManualJournal";
 import JournalList from "../pages/accounting/JournalList";
+import JournalVoucherPage from "../pages/accounting/JournalVoucherPage";
 import ChartOfAccounts from "../pages/accounting/ChartOfAccount/ChartOfAccounts";
 import AccountForm from "../pages/accounting/ChartOfAccount/AccountForm";
 import BankReconciliation from "../pages/accounting/BankReconciliation";
@@ -61,6 +63,8 @@ import AssetsPage from "../pages/assets/Assets";
 
 // Reports
 import ReportsHome from "../pages/reports/ReportsHome";
+import ProfitLossReport from "../pages/reports/ProfitLoss/ProfitLossReport";
+import ProfitLossPdfPage from "../pages/reports/ProfitLoss/ProfitLossPdfPage";
 
 // Settings
 import BusinessCategory from "../pages/settings/businessCategory/page";
@@ -158,6 +162,7 @@ export default function AppRouter() {
         <Route path="/accounting/chart-of-accounts/new" element={<AccountForm />} />
         <Route path="/accounting/manual-journals" element={<ManualJournal />} />
         <Route path="/accounting/journal-list" element={<JournalList />} />
+        <Route path="/accounting/journal-voucher/:id" element={<JournalVoucherPage />}/>
         <Route path="/accounting/bank-reconciliation" element={<BankReconciliation/>} />
         <Route path="/accounting/bank-transactions"element={<BankTransactions />}/>
         <Route path="/accounting/bank-statement" element={<BankStatement />} />
@@ -182,6 +187,9 @@ export default function AppRouter() {
 
         {/* Reports */}
         <Route path="/reports" element={<ReportsHome />} />
+        <Route path="/reports/profit-loss/" element={<ProfitLossReport />} />
+        <Route path="/reports/profit-loss/pdf" element={<ProfitLossPdfPage />} />
+        
 
         {/* Master / Settings */}
         <Route path="/master/business-category" element={<BusinessCategory />} />
