@@ -36,7 +36,6 @@ import OrderList from "../pages/purchases/Product Order/OrderList";
 
 
 // Accounting
-import Account from "../pages/accounting/Account";
 import ManualJournal from "../pages/accounting/ManualJournal";
 import JournalList from "../pages/accounting/JournalList";
 import JournalVoucherPage from "../pages/accounting/JournalVoucherPage";
@@ -65,6 +64,8 @@ import AssetsPage from "../pages/assets/Assets";
 import ReportsHome from "../pages/reports/ReportsHome";
 import ProfitLossReport from "../pages/reports/ProfitLoss/ProfitLossReport";
 import ProfitLossPdfPage from "../pages/reports/ProfitLoss/ProfitLossPdfPage";
+import Account from "../pages/reports/Accounts/Account";
+import AccountsPdfPage from "../pages/reports/Accounts/AccountsPdfPage";
 
 // Settings
 import BusinessCategory from "../pages/settings/businessCategory/page";
@@ -157,7 +158,6 @@ export default function AppRouter() {
 
 
         {/* Accounting */}
-        <Route path="/accounting/accounts" element={<Account />} />
         <Route path="/accounting/chart-of-accounts" element={<ChartOfAccounts />} />
         <Route path="/accounting/chart-of-accounts/new" element={<AccountForm />} />
         <Route path="/accounting/manual-journals" element={<ManualJournal />} />
@@ -189,6 +189,8 @@ export default function AppRouter() {
         <Route path="/reports" element={<ReportsHome />} />
         <Route path="/reports/profit-loss/" element={<ProfitLossReport />} />
         <Route path="/reports/profit-loss/pdf" element={<ProfitLossPdfPage />} />
+        <Route path="/reports/accounts" element={<Account />} />
+        <Route path="/reports/accounts/pdf" element={<AccountsPdfPage />} />
         
 
         {/* Master / Settings */}

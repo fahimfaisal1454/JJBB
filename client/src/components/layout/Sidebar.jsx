@@ -30,7 +30,6 @@ export default function Sidebar() {
       title: "Accounting",
       icon: "📚",
       items: [
-        { label: "Accounts", path: "/accounting/accounts" },
         { label: "Manual Journals", path: "/accounting/manual-journals" },
         { label: "Chart of Accounts", path: "/accounting/chart-of-accounts" },
         { label: "Cash Reconciliation", path: "/accounting/cash-reconciliation" },

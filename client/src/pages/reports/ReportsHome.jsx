@@ -3,6 +3,12 @@ import { Link } from "react-router-dom";
 export default function ReportsHome() {
   const reports = [
     {
+      name: "Accounts",
+      category: "Financial",
+      description: "Income,Expense Details Report.",
+      path: "/reports/accounts",
+    },
+    {
       name: "Profit & Loss",
       category: "Financial",
       description: "Income, expenses and net profit for a period.",
@@ -14,12 +20,7 @@ export default function ReportsHome() {
       description: "Assets, liabilities and equity snapshot.",
       path: null,
     },
-    {
-      name: "Inventory Valuation",
-      category: "Stock",
-      description: "Stock quantities and values by product.",
-      path: null,
-    },
+    
   ];
 
   return (

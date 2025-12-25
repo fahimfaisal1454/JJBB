@@ -10,7 +10,6 @@ from sales.serializers import SaleSerializer
 from purchase.models import Expense, SalaryExpense, Purchase
 from datetime import date
 from accounts.models import JournalEntryLine
-from .serializers import ProfitLossSerializer
 from .utils import percent_change
 
 
@@ -91,11 +90,14 @@ class SaleReportView(APIView):
         sales = Sale.objects.all().order_by('-sale_date').prefetch_related('payments')
 
         # query params
+        business_category = request.query_params.get('business_category')
         customer = request.query_params.get('customer')
         from_date = request.query_params.get('from_date')
         to_date = request.query_params.get('to_date')
 
         # filtering
+        if business_category:
+            sales = sales.filter(business_category__id=business_category)
         if customer:
             sales = sales.filter(customer_id=customer)
         if from_date:
@@ -136,6 +138,7 @@ class CombinedExpanseView(APIView):
         # ==========================
         #   GET FILTER PARAMETERS
         # ==========================
+        business_category = request.query_params.get("business_category")
         from_date = request.query_params.get("from_date")
         to_date = request.query_params.get("to_date")
         cost_category = request.query_params.get("cost_category")
@@ -147,6 +150,9 @@ class CombinedExpanseView(APIView):
         # ==========================
         expenses = Expense.objects.all().order_by("-expense_date")
         print(expenses)
+
+        if business_category:
+            expenses = expenses.filter(business_category__id=business_category)
 
         if from_date:
             expenses = expenses.filter(expense_date__gte=parse_date(from_date))
@@ -170,14 +176,18 @@ class CombinedExpanseView(APIView):
                 "account_title": ex.recorded_by or "",
                 "cost_category": ex.cost_category.category_name,
                 "description": ex.note,
-                "amount": ex.amount,
-                "transaction_type": ex.payment_source,
+                "amount": ex.amount
             })
+
+        print("Grouped Data after Expenses:", grouped_data)
 
         # ==========================
         #   PURCHASE PAYMENTS
         # ==========================
         purchases = Purchase.objects.select_related("vendor").prefetch_related("payments").all()
+
+        if business_category:
+            purchases = purchases.filter(business_category__id=business_category)
 
         if from_date:
             purchases = purchases.filter(purchase_date__gte=parse_date(from_date))
@@ -214,6 +224,10 @@ class CombinedExpanseView(APIView):
         # ==========================
         salaries = SalaryExpense.objects.select_related("staff").all()
 
+
+        if business_category:            
+            salaries = salaries.filter(business_category__id=business_category)
+
         if from_date:
             salaries = salaries.filter(created_at__date__gte=parse_date(from_date))
 
@@ -240,6 +254,9 @@ class CombinedExpanseView(APIView):
         grouped_data.sort(key=lambda x: x["date"], reverse=True)
 
         return Response(grouped_data)
+
+
+
 
 
 

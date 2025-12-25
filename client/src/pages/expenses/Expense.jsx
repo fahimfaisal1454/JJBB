@@ -178,7 +178,6 @@ export default function ExpensePage() {
       recorded_by: form.recorded_by,
       payment_mode: form.payment_mode || null,
       bank_account: form.bank_account || null,
-      business_category: selectedCategory?.id || null, // ✅ if your backend expects it
     };
 
     setSaving(true);
