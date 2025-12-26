@@ -15,28 +15,31 @@ export default function CombinedPurchasePDFPage() {
   const toDate = searchParams.get("to");
   const productName = searchParams.get("product");
 
-  // ✅ get business_category from localStorage
   const [selectedCategory, setSelectedCategory] = useState(
-      JSON.parse(localStorage.getItem("business_category")) || null
-    );
+    JSON.parse(localStorage.getItem("business_category")) || null
+  );
 
   useEffect(() => {
     const fetchPDFData = async () => {
-      const res = await AxiosInstance.get("purchase-report/", {
-        params: {
-          from_date: fromDate || undefined,
-          to_date: toDate || undefined,
-          product_name: productName || undefined,
-          business_category: selectedCategory.id || undefined,
-        },
-      });
-
-      setData(res.data);
-      setLoading(false);
+      try {
+        const res = await AxiosInstance.get("purchase-report/", {
+          params: {
+            from_date: fromDate || undefined,
+            to_date: toDate || undefined,
+            product_name: productName || undefined,
+            business_category: selectedCategory?.id || undefined,
+          },
+        });
+        setData(res.data);
+      } catch (e) {
+        console.error("Failed to fetch PDF data:", e);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchPDFData();
-  }, [fromDate, toDate, productName, businessCategory]);
+  }, [fromDate, toDate, productName, selectedCategory]);
 
   if (loading) return <div className="p-6">Loading PDF...</div>;
 
@@ -44,10 +47,7 @@ export default function CombinedPurchasePDFPage() {
     <div className="h-screen flex flex-col">
       {/* TOP BAR */}
       <div className="bg-gray-700 p-3 flex justify-between items-center">
-        <button
-          onClick={() => navigate(-1)}
-          className="text-white text-sm"
-        >
+        <button onClick={() => navigate(-1)} className="text-white text-sm">
           ← Back
         </button>
 
@@ -68,14 +68,16 @@ export default function CombinedPurchasePDFPage() {
       </div>
 
       {/* PDF VIEW */}
-      <PDFViewer style={{ width: "100%", height: "100%" }}>
-        <CombinedPurchasePDF
-          data={data}
-          fromDate={fromDate}
-          toDate={toDate}
-          productName={productName}
-        />
-      </PDFViewer>
+      <div style={{ flex: 1 }}>
+        <PDFViewer style={{ width: "100%", height: "100%" }}>
+          <CombinedPurchasePDF
+            data={data}
+            fromDate={fromDate}
+            toDate={toDate}
+            productName={productName}
+          />
+        </PDFViewer>
+      </div>
     </div>
   );
 }
