@@ -6,6 +6,8 @@ from .serializers import CombinedPurchaseSerializer
 from decimal import Decimal
 from django.db.models import Sum, Q
 from sales.models import Sale
+from stocks.models import Asset
+
 from sales.serializers import SaleSerializer
 from purchase.models import Expense, SalaryExpense, Purchase
 from datetime import date
@@ -444,3 +446,29 @@ class ProfitLossReportView(APIView):
         }
 
         return Response(data)
+
+
+#Assets Report View
+
+class AssetsReportView(APIView):
+    def get(self, request):
+        business_category = request.query_params.get("business_category")
+
+        assets = Asset.objects.select_related(
+            "category",
+            "business_category"
+        ).order_by("asset_name")
+
+        if business_category:
+            assets = assets.filter(business_category__id=business_category)
+
+        data = []
+        for asset in assets:
+            data.append({
+                "asset_name": asset.asset_name,
+                "category": asset.category.category_name if asset.category else "",
+                "quantity": asset.quantity or 0,
+                "value": float(asset.asset_value or 0),
+            })
+
+        return Response({"assets": data})
